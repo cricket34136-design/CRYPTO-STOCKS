@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INVITEGAIN | Auth</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #05060a;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark) 0%, #070b2a 50%, #12072a 100%);
+            color: var(--light);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        .blob-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            top: -150px;
+            left: -150px;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .blob-2 {
+            width: 300px;
+            height: 300px;
+            background: var(--secondary);
+            bottom: -100px;
+            right: -100px;
+            animation: float 25s infinite ease-in-out reverse;
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            opacity: 0.2;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -30px) scale(1.05); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            min-width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast i {
+            font-size: 18px;
+        }
+
+        .toast.success i {
+            color: var(--success);
+        }
+
+        .toast.error i {
+            color: var(--danger);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px;
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 460px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            padding: 40px 35px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .auth-header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .auth-header p {
+            color: var(--gray);
+            font-size: 15px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            padding: 6px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 14px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            z-index: 1;
+            position: relative;
+            color: var(--gray);
+        }
+
+        .tab.active {
+            color: var(--light);
+        }
+
+        .tab-indicator {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            height: calc(100% - 12px);
+            width: calc(50% - 6px);
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .form-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form {
+            display: none;
+            flex-direction: column;
+            gap: 18px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .form.active {
+            display: flex;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        .checkbox-group label {
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            transition: color 0.3s ease;
+        }
+
+        .link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .btn {
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .disclaimer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 11px;
+            color: var(--gray);
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .loading .btn-text {
+            display: none;
+        }
+
+        .loading .spinner {
+            display: block;
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .auth-card {
+                padding: 30px 25px;
+                border-radius: 16px;
+            }
+            
+            .auth-header h1 {
+                font-size: 28px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 18px;
+            }
+            
+            .btn {
+                padding: 14px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Auth Page Only -->
+    <div class="container" id="authContainer">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>INVITEGAIN</h1>
+                <p>Login or create your account</p>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab-indicator" id="tabIndicator"></div>
+                <div class="tab active" id="loginTab" onclick="switchTab('login')">Login</div>
+                <div class="tab" id="registerTab" onclick="switchTab('register')">Register</div>
+            </div>
+            
+            <div class="form-container">
+                <form class="form active" id="loginForm" onsubmit="handleLoginSubmit(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="loginEmail" name="email" placeholder="Enter your email">
+                        </div>
+                        <div class="error-message" id="loginEmailError"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="loginPassword" name="password" placeholder="Enter your password">
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword')">
+                                <i class="far fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="error-message" id="loginPasswordError"></div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <label for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="#" class="link" onclick="handleForgotPassword()" style="margin-left: auto;">Forgot password?</a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="loginBtn">
+                        <span class="btn-text">Login</span>
+                        <div class="spinner"></div>
+                    </button>
+                </form>
+                
+                <form class="form" id="registerForm" onsubmit="handleRegisterSubmit(event)">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="fullName" name="fullName" placeholder="Enter your full name">
+                        </div>
+                        <div class="error-message" id="fullNameError"></div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="username" name="username" placeholder="Choose username">
+                            </div>
+                            <div class="error-message" id="usernameError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <div class="input-wrapper">
+                                <input type="email" id="email" name="email" placeholder="Enter your email">
+                            </div>
+                            <div class="error-message" id="emailError"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <div class="input-wrapper">
+                            <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+                        </div>
+                        <div class="error-message" id="phoneError"></div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="password" name="password" placeholder="Create password">
+                                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="error-message" id="passwordError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm password">
+                                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirmPassword')">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                            </div>
+                            <div class="error-message" id="confirmPasswordError"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="referralCode">Referral Code (Optional)</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="referralCode" name="referralCode" placeholder="Enter referral code if any">
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="terms" name="terms">
+                        <label for="terms">I agree to the <a href="#" class="link">Terms & Privacy Policy</a></label>
+                    </div>
+                    <div class="error-message" id="termsError"></div>
+                    
+                    <button type="submit" class="btn btn-primary" id="registerBtn">
+                        <span class="btn-text">Create Account</span>
+                        <div class="spinner"></div>
+                    </button>
+                </form>
+                
+                <div class="disclaimer">
+                    <p>Investments are subject to market risk. No guaranteed profits. This platform provides tools for tracking and referral rewards only.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYDVkQygUuLtS8ZIRJF6m1s3t-_hF89DY",
+            authDomain: "invitegain-6ce0d.firebaseapp.com",
+            projectId: "invitegain-6ce0d",
+            storageBucket: "invitegain-6ce0d.firebasestorage.app",
+            messagingSenderId: "586313606242",
+            appId: "1:586313606242:web:ae8da69bb8003bdd799d3b",
+            measurementId: "G-T4RBRVEN1F"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // DOM Elements
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const tabIndicator = document.getElementById('tabIndicator');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const toastContainer = document.getElementById('toastContainer');
+
+        let activeTab = 'login';
+
+        // Initialize application
+        function init() {
+            tabIndicator.style.transform = 'translateX(0)';
+            
+            // Add input event listeners to clear errors
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    clearError(input.id);
+                });
+            });
+
+            // Check if user is already logged in
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // User is already logged in, redirect to profile page
+                    redirectToProfile();
+                }
+            });
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            if (tab === activeTab) return;
+            
+            activeTab = tab;
+            
+            if (tab === 'login') {
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+                tabIndicator.style.transform = 'translateX(0)';
+                loginForm.classList.add('active');
+                registerForm.classList.remove('active');
+            } else {
+                loginTab.classList.remove('active');
+                registerTab.classList.add('active');
+                tabIndicator.style.transform = 'translateX(100%)';
+                loginForm.classList.remove('active');
+                registerForm.classList.add('active');
+            }
+        }
+
+        // Password visibility toggle
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const toggleBtn = input.nextElementSibling;
+            const icon = toggleBtn.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Error handling utilities
+        function showError(inputId, message) {
+            const errorElement = document.getElementById(inputId + 'Error');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.style.borderColor = 'var(--danger)';
+                }
+            }
+        }
+
+        function clearError(inputId) {
+            const errorElement = document.getElementById(inputId + 'Error');
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.style.display = 'none';
+                
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }
+            }
+        }
+
+        // Toast notifications
+        function showToast(type, title, message) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            toast.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        // Loading state for buttons
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.classList.add('loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('loading');
+                button.disabled = false;
+            }
+        }
+
+        // Form validation
+        function validateLoginForm() {
+            let isValid = true;
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            if (!email) {
+                showError('loginEmail', 'Email is required');
+                isValid = false;
+            } else {
+                clearError('loginEmail');
+            }
+            
+            if (!password) {
+                showError('loginPassword', 'Password is required');
+                isValid = false;
+            } else if (password.length < 8) {
+                showError('loginPassword', 'Password must be at least 8 characters');
+                isValid = false;
+            } else {
+                clearError('loginPassword');
+            }
+            
+            return isValid;
+        }
+
+        function validateRegisterForm() {
+            let isValid = true;
+            const fullName = document.getElementById('fullName').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            const terms = document.getElementById('terms').checked;
+            
+            if (!fullName) {
+                showError('fullName', 'Full name is required');
+                isValid = false;
+            } else if (fullName.length < 3) {
+                showError('fullName', 'Full name must be at least 3 characters');
+                isValid = false;
+            } else {
+                clearError('fullName');
+            }
+            
+            if (!username) {
+                showError('username', 'Username is required');
+                isValid = false;
+            } else if (username.length < 3) {
+                showError('username', 'Username must be at least 3 characters');
+                isValid = false;
+            } else if (/\s/.test(username)) {
+                showError('username', 'Username cannot contain spaces');
+                isValid = false;
+            } else {
+                clearError('username');
+            }
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email) {
+                showError('email', 'Email is required');
+                isValid = false;
+            } else if (!emailRegex.test(email)) {
+                showError('email', 'Please enter a valid email address');
+                isValid = false;
+            } else {
+                clearError('email');
+            }
+            
+            const phoneDigits = phone.replace(/\D/g, '');
+            if (!phone) {
+                showError('phone', 'Phone number is required');
+                isValid = false;
+            } else if (phoneDigits.length < 10) {
+                showError('phone', 'Phone number must have at least 10 digits');
+                isValid = false;
+            } else {
+                clearError('phone');
+            }
+            
+            if (!password) {
+                showError('password', 'Password is required');
+                isValid = false;
+            } else if (password.length < 8) {
+                showError('password', 'Password must be at least 8 characters');
+                isValid = false;
+            } else {
+                clearError('password');
+            }
+            
+            if (!confirmPassword) {
+                showError('confirmPassword', 'Please confirm your password');
+                isValid = false;
+            } else if (password !== confirmPassword) {
+                showError('confirmPassword', 'Passwords do not match');
+                isValid = false;
+            } else {
+                clearError('confirmPassword');
+            }
+            
+            if (!terms) {
+                showError('terms', 'You must agree to the terms and privacy policy');
+                isValid = false;
+            } else {
+                clearError('terms');
+            }
+            
+            return isValid;
+        }
+
+        // Redirect to profile page
+        function redirectToProfile() {
+            window.location.href = 'profile.html';
+        }
+
+        // Authentication handlers
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            
+            if (!validateLoginForm()) {
+                showToast('error', 'Validation Error', 'Please fix the errors in the form');
+                return;
+            }
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
+            
+            setLoading(loginBtn, true);
+            
+            try {
+                const persistence = rememberMe ? 
+                    firebase.auth.Auth.Persistence.LOCAL : 
+                    firebase.auth.Auth.Persistence.SESSION;
+                
+                await auth.setPersistence(persistence);
+                
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                showToast('success', 'Login Successful', 'Redirecting to your profile...');
+                
+                // Wait a moment to show the success message, then redirect
+                setTimeout(() => {
+                    redirectToProfile();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                let errorMessage = 'An error occurred during login.';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'No account found with this email.';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Incorrect password. Please try again.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email address.';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = 'This account has been disabled.';
+                        break;
+                }
+                
+                showToast('error', 'Login Failed', errorMessage);
+            } finally {
+                setLoading(loginBtn, false);
+            }
+        }
+
+        async function handleRegisterSubmit(event) {
+            event.preventDefault();
+            
+            if (!validateRegisterForm()) {
+                showToast('error', 'Validation Error', 'Please fix the errors in the form');
+                return;
+            }
+            
+            const formData = {
+                fullName: document.getElementById('fullName').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                password: document.getElementById('password').value.trim(),
+                referralCode: document.getElementById('referralCode').value.trim() || null
+            };
+            
+            setLoading(registerBtn, true);
+            
+            try {
+                // Create user in Firebase Auth
+                const userCredential = await auth.createUserWithEmailAndPassword(
+                    formData.email, 
+                    formData.password
+                );
+                
+                const user = userCredential.user;
+                
+                // Generate referral code for the user
+                const userReferralCode = generateReferralCode(formData.username);
+                
+                // Store additional user data in Firestore
+                await db.collection('users').doc(user.uid).set({
+                    uid: user.uid,
+                    fullName: formData.fullName,
+                    username: formData.username,
+                    email: formData.email,
+                    phone: formData.phone,
+                    referralCode: userReferralCode,
+                    referredBy: formData.referralCode || null,
+                    accountBalance: 0,
+                    referralEarnings: 0,
+                    totalReferrals: 0,
+                    activeReferrals: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // If referral code was provided, update referrer's data
+                if (formData.referralCode) {
+                    await processReferral(formData.referralCode, user.uid);
+                }
+                
+                // Create initial transaction record
+                await db.collection('transactions').add({
+                    userId: user.uid,
+                    type: 'signup_bonus',
+                    amount: 10,
+                    status: 'completed',
+                    description: 'Welcome bonus for new account',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showToast('success', 'Account Created', 'Welcome to INVITEGAIN! Redirecting to your profile...');
+                
+                // Wait a moment to show the success message, then redirect
+                setTimeout(() => {
+                    redirectToProfile();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                
+                let errorMessage = 'An error occurred during registration.';
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'This email is already registered.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Invalid email address.';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Password is too weak. Please use a stronger password.';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        errorMessage = 'Email/password accounts are not enabled.';
+                        break;
+                }
+                
+                showToast('error', 'Registration Failed', errorMessage);
+            } finally {
+                setLoading(registerBtn, false);
+            }
+        }
+
+        async function handleForgotPassword() {
+            const email = document.getElementById('loginEmail').value.trim() || 
+                          document.getElementById('email').value.trim();
+            
+            if (!email) {
+                showToast('error', 'Email Required', 'Please enter your email address');
+                return;
+            }
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showToast('success', 'Password Reset', 'Check your email for reset instructions.');
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showToast('error', 'Reset Failed', 'Failed to send reset email. Please try again.');
+            }
+        }
+
+        // Utility functions
+        function generateReferralCode(username) {
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+            return `${username.toUpperCase().substring(0, 3)}${randomNum}`;
+        }
+
+        async function processReferral(referralCode, newUserId) {
+            try {
+                // Find user with this referral code
+                const referralQuery = await db.collection('users')
+                    .where('referralCode', '==', referralCode)
+                    .get();
+                
+                if (!referralQuery.empty) {
+                    const referrerDoc = referralQuery.docs[0];
+                    const referrerId = referrerDoc.id;
+                    
+                    // Update referrer's data
+                    await db.collection('users').doc(referrerId).update({
+                        totalReferrals: firebase.firestore.FieldValue.increment(1),
+                        activeReferrals: firebase.firestore.FieldValue.increment(1),
+                        referralEarnings: firebase.firestore.FieldValue.increment(5),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Create referral bonus transaction for referrer
+                    await db.collection('transactions').add({
+                        userId: referrerId,
+                        type: 'referral_bonus',
+                        amount: 5,
+                        status: 'completed',
+                        description: `Referral bonus for ${referralCode}`,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    // Record referral relationship
+                    await db.collection('referrals').add({
+                        referrerId: referrerId,
+                        referredUserId: newUserId,
+                        referralCode: referralCode,
+                        status: 'active',
+                        bonusPaid: 5,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } catch (error) {
+                console.error('Error processing referral:', error);
+            }
+        }
+auth.onAuthStateChanged((user) => {
+   if(user){
+      window.location.href = "profile.html";
+   }
+});
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

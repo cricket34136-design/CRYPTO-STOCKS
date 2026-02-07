@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InviteGain - Investment</title>
+    <style>
+        :root {
+            --primary: #00ff88;
+            --primary-glow: rgba(0, 255, 136, 0.3);
+            --secondary: #6c63ff;
+            --dark-bg: #0a0a0f;
+            --darker-bg: #050508;
+            --card-bg: rgba(20, 20, 30, 0.7);
+            --card-border: rgba(108, 99, 255, 0.2);
+            --text: #ffffff;
+            --text-secondary: #b0b0c0;
+            --danger: #ff4757;
+            --success: #00ff88;
+            --warning: #ffaa00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            padding-top: 60px;
+        }
+
+        /* Toast System */
+        .toast-container {
+            position: fixed;
+            top: 70px;
+            right: 10px;
+            z-index: 1000;
+            max-width: 320px;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--primary-glow);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        /* Navbars */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(108, 99, 255, 0.1);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wallet-balance {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            font-size: 0.9rem;
+        }
+
+        .wallet-amount {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: var(--success);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 6px;
+        }
+
+        .refresh-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .page-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(108, 99, 255, 0.1);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .nav-btn.active {
+            color: var(--primary);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Asset Selector */
+        .asset-selector {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 5px 0 15px;
+            margin-bottom: 20px;
+            scrollbar-width: none;
+        }
+
+        .asset-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .asset-card {
+            flex: 0 0 auto;
+            width: 120px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .asset-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .asset-card.selected {
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .asset-card.selected::before {
+            opacity: 1;
+        }
+
+        .asset-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .asset-symbol {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .asset-name {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .asset-price {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .asset-change {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .asset-change.positive {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--success);
+        }
+
+        .asset-change.negative {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--danger);
+        }
+
+        /* Chart Card */
+        .chart-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(108, 99, 255, 0.1) 0%, transparent 70%);
+            z-index: 0;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .current-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .chart-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .chart-container {
+            height: 200px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #marketChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .timeframe-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .timeframe-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .timeframe-btn.active {
+            background: rgba(108, 99, 255, 0.2);
+            border-color: var(--secondary);
+            color: var(--text);
+        }
+
+        /* Plans Section */
+        .section-title {
+            font-size: 1.3rem;
+            margin: 25px 0 15px;
+            padding-left: 10px;
+            position: relative;
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        .plans-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .plan-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 20px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .plan-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .plan-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+        }
+
+        .plan-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .detail-value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .profit-value {
+            color: var(--success);
+        }
+
+        .plan-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 25px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(108, 99, 255, 0.3);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .wallet-info {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .wallet-info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .wallet-info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .insufficient-balance {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Active Investments */
+        .investments-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .investment-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 20px;
+        }
+
+        .investment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .investment-asset {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-running {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+        }
+
+        .status-completed {
+            background: rgba(108, 99, 255, 0.1);
+            color: var(--secondary);
+        }
+
+        .investment-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .progress-container {
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            border: 3px solid transparent;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .investment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Real-time indicators */
+        .real-time-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+    <!-- Chart.js for graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Top Navbar -->
+    <nav class="top-nav">
+        <div class="logo">INVITEGAIN</div>
+        <div class="wallet-balance" id="walletBalance">
+            <span>Balance: <span class="wallet-amount" id="walletAmount">Loading...</span></span>
+            <button class="refresh-btn" onclick="refreshWalletBalance()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                </svg>
+            </button>
+        </div>
+        <button class="icon-btn" onclick="window.location.href='history.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Asset Selector -->
+        <div class="asset-selector" id="assetSelector">
+            <!-- Assets will be dynamically added -->
+        </div>
+
+        <!-- Chart Card -->
+        <div class="chart-card">
+            <div class="real-time-indicator">
+                <div class="pulse-dot"></div>
+                <span>LIVE</span>
+            </div>
+            <div class="chart-header">
+                <div>
+                    <div class="current-price" id="currentPrice">$0.00</div>
+                    <div class="chart-stats">
+                        <span>High: $<span id="highPrice">0</span></span>
+                        <span>Low: $<span id="lowPrice">0</span></span>
+                        <span>24h: <span id="dailyChange">0%</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="marketChart"></canvas>
+            </div>
+            <div class="timeframe-selector">
+                <button class="timeframe-btn active" onclick="changeTimeframe('1H')">1H</button>
+                <button class="timeframe-btn" onclick="changeTimeframe('24H')">24H</button>
+                <button class="timeframe-btn" onclick="changeTimeframe('7D')">7D</button>
+                <button class="timeframe-btn" onclick="changeTimeframe('30D')">30D</button>
+            </div>
+        </div>
+
+        <!-- Plans Section -->
+        <h2 class="section-title" id="plansTitle">Plans for BTC</h2>
+        <div class="plans-grid" id="plansGrid">
+            <!-- Plans will be dynamically added -->
+        </div>
+
+        <!-- Active Investments -->
+        <h2 class="section-title">My Active Investments <span style="font-size: 0.9rem; color: var(--text-secondary);" id="investmentCount"></span></h2>
+        <div class="investments-grid" id="investmentsGrid">
+            <!-- Investments will be dynamically added -->
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-btn" onclick="window.location.href='dashboard.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>Dashboard</span>
+        </button>
+        <button class="nav-btn active" onclick="window.location.href='investment.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M16.2 7.8l-2.6 2.6c-.3.3-.7.3-1 0L10 8.6c-.3-.3-.8-.1-.8.3v4.3c0 .4.3.8.8.8h4.3c.4 0 .6-.5.3-.8l-1.8-1.8 2.6-2.6c.3-.3.3-.7 0-1z"/>
+            </svg>
+            <span>Investment</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='referral.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span>Referral</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='profile.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 3a4 4 0 100 8 4 4 0 000-8z"/>
+            </svg>
+            <span>Profile</span>
+        </button>
+    </nav>
+
+    <!-- Invest Modal -->
+    <div class="modal" id="investModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Confirm Investment</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            
+            <div class="wallet-info">
+                <div class="wallet-info-item">
+                    <span>Your Balance:</span>
+                    <span class="wallet-amount" id="modalWalletBalance">0 PKR</span>
+                </div>
+                <div class="wallet-info-item">
+                    <span>After Investment:</span>
+                    <span id="modalAfterBalance" style="color: var(--success);">0 PKR</span>
+                </div>
+            </div>
+            
+            <div class="insufficient-balance" id="insufficientBalance">
+                Insufficient balance! Please deposit funds first.
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Selected Asset</label>
+                <input type="text" id="modalAsset" class="form-input" readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Plan</label>
+                <input type="text" id="modalPlan" class="form-input" readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Investment Amount (PKR)</label>
+                <input type="number" id="modalAmount" class="form-input" placeholder="Enter amount" min="1000" max="200000" step="100">
+                <div id="amountError" style="color: var(--danger); font-size: 0.9rem; margin-top: 5px; display: none;">
+                    Amount must be between min and max of selected plan
+                </div>
+            </div>
+
+            <div class="summary-item">
+                <span>Daily Profit</span>
+                <span id="summaryDaily">0 PKR</span>
+            </div>
+            <div class="summary-item">
+                <span>Total Profit</span>
+                <span id="summaryTotal">0 PKR</span>
+            </div>
+            <div class="summary-item">
+                <span>Refund Principal</span>
+                <span style="color: var(--success);">Yes</span>
+            </div>
+            <div class="summary-item">
+                <span>Total Return</span>
+                <span id="summaryReturn" style="color: var(--success); font-weight: 600;">0 PKR</span>
+            </div>
+
+            <button class="btn btn-primary" onclick="confirmInvestment()" style="margin-top: 25px; width: 100%;" id="confirmBtn">
+                Confirm Investment
+            </button>
+        </div>
+    </div>
+
+    <!-- Calculate Modal -->
+    <div class="modal" id="calculateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Profit Calculator</h2>
+                <button class="close-btn" onclick="closeCalculateModal()">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Plan</label>
+                <input type="text" id="calcPlanName" class="form-input" readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Daily Profit %</label>
+                <input type="text" id="calcDailyPercent" class="form-input" readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Duration (Days)</label>
+                <input type="text" id="calcDuration" class="form-input" readonly>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Investment Amount (PKR)</label>
+                <input type="number" id="calcAmount" class="form-input" placeholder="Enter amount" step="100">
+                <div id="calcAmountError" style="color: var(--danger); font-size: 0.9rem; margin-top: 5px; display: none;">
+                    Please enter a valid amount
+                </div>
+            </div>
+
+            <div class="summary-item">
+                <span>Daily Profit</span>
+                <span id="calcDailyProfit" style="color: var(--success);">0 PKR</span>
+            </div>
+            <div class="summary-item">
+                <span>Total Profit</span>
+                <span id="calcTotalProfit" style="color: var(--success);">0 PKR</span>
+            </div>
+            <div class="summary-item">
+                <span>Principal Refund</span>
+                <span style="color: var(--success);">Yes</span>
+            </div>
+            <div class="summary-item">
+                <span>Total Return</span>
+                <span id="calcTotalReturn" style="color: var(--success); font-weight: 600;">0 PKR</span>
+            </div>
+
+            <button class="btn btn-primary" onclick="calculateProfit()" style="margin-top: 25px; width: 100%;">
+                Calculate
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYDVkQygUuLtS8ZIRJF6m1s3t-_hF89DY",
+            authDomain: "invitegain-6ce0d.firebaseapp.com",
+            projectId: "invitegain-6ce0d",
+            storageBucket: "invitegain-6ce0d.firebasestorage.app",
+            messagingSenderId: "586313606242",
+            appId: "1:586313606242:web:ae8da69bb8003bdd799d3b",
+            measurementId: "G-T4RBRVEN1F"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Global State
+        let currentUser = null;
+        let userWalletBalance = 0;
+        let selectedAsset = null;
+        let selectedPlan = null;
+        let chart = null;
+        let currentTimeframe = '1H';
+        let realTimePrices = {};
+        let priceUpdateInterval = null;
+        let walletListener = null;
+        let investmentsListener = null;
+
+        // DOM Elements
+        const assetSelector = document.getElementById('assetSelector');
+        const plansGrid = document.getElementById('plansGrid');
+        const investmentsGrid = document.getElementById('investmentsGrid');
+        const plansTitle = document.getElementById('plansTitle');
+        const currentPrice = document.getElementById('currentPrice');
+        const walletAmount = document.getElementById('walletAmount');
+        const toastContainer = document.querySelector('.toast-container');
+        const investModal = document.getElementById('investModal');
+        const investmentCount = document.getElementById('investmentCount');
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Check authentication
+                await checkAuth();
+                
+                // Initialize components
+                await initAssets();
+                await initPlans();
+                initChart();
+                await loadInvestments();
+                
+                // Start real-time updates
+                startRealTimeUpdates();
+                
+                // Set up wallet listener
+                setupWalletListener();
+                
+                showToast('Investment dashboard loaded!', 'success');
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showToast('Failed to load dashboard. Please refresh.', 'error');
+            }
+        });
+
+        async function checkAuth() {
+            // Check if user is logged in
+            return new Promise((resolve, reject) => {
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        console.log('User logged in:', user.email);
+                        resolve(user);
+                    } else {
+                        // For development without auth, use a dummy user
+                        console.log('No user logged in, using demo user');
+                        currentUser = {
+                            uid: 'demo-user-123',
+                            email: 'demo@invitegain.com'
+                        };
+                        resolve(currentUser);
+                    }
+                });
+            });
+        }
+
+        // Asset Functions
+        async function initAssets() {
+            try {
+                // Try to load assets from Firestore first
+                const assetsSnapshot = await db.collection('assets').get();
+                
+                if (!assetsSnapshot.empty) {
+                    const assets = [];
+                    assetsSnapshot.forEach(doc => {
+                        assets.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    // Store assets and update UI
+                    window.assets = assets;
+                    selectedAsset = assets[0] || getDefaultAssets()[0];
+                } else {
+                    // Use default assets if Firestore is empty
+                    window.assets = getDefaultAssets();
+                    selectedAsset = window.assets[0];
+                }
+                
+                updateAssetUI();
+            } catch (error) {
+                console.error('Error loading assets:', error);
+                // Fallback to default assets
+                window.assets = getDefaultAssets();
+                selectedAsset = window.assets[0];
+                updateAssetUI();
+            }
+        }
+
+        function getDefaultAssets() {
+            return [
+                { id: 'btc', symbol: 'BTC', name: 'Bitcoin', price: 65000, change: 2.5 },
+                { id: 'eth', symbol: 'ETH', name: 'Ethereum', price: 3500, change: -1.2 },
+                { id: 'gold', symbol: 'XAU', name: 'Gold', price: 2100, change: 0.8 },
+                { id: 'silver', symbol: 'XAG', name: 'Silver', price: 24.5, change: 0.3 }
+            ];
+        }
+
+        function updateAssetUI() {
+            assetSelector.innerHTML = '';
+            window.assets.forEach(asset => {
+                const isSelected = asset.id === selectedAsset.id;
+                const card = document.createElement('div');
+                card.className = `asset-card ${isSelected ? 'selected' : ''}`;
+                card.innerHTML = `
+                    <div class="asset-symbol">${asset.symbol}</div>
+                    <div class="asset-name">${asset.name}</div>
+                    <div class="asset-price">$${asset.price.toLocaleString()}</div>
+                    <div class="asset-change ${asset.change >= 0 ? 'positive' : 'negative'}">
+                        ${asset.change >= 0 ? '+' : ''}${asset.change.toFixed(2)}%
+                    </div>
+                `;
+                card.onclick = () => selectAsset(asset);
+                assetSelector.appendChild(card);
+            });
+            
+            plansTitle.textContent = `Plans for ${selectedAsset.symbol}`;
+        }
+
+        function selectAsset(asset) {
+            selectedAsset = asset;
+            updateAssetUI();
+            updateChart();
+            showToast(`${asset.name} selected`, 'success');
+        }
+
+        // Plan Functions
+        async function initPlans() {
+            try {
+                // Load plans from Firestore
+                const plansSnapshot = await db.collection('investmentPlans').get();
+                
+                if (!plansSnapshot.empty) {
+                    const plans = [];
+                    plansSnapshot.forEach(doc => {
+                        plans.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    // Sort plans by min amount
+                    plans.sort((a, b) => a.min - b.min);
+                    window.plans = plans;
+                } else {
+                    // Use default plans if Firestore is empty
+                    window.plans = getDefaultPlans();
+                }
+                
+                updatePlansUI();
+            } catch (error) {
+                console.error('Error loading plans:', error);
+                window.plans = getDefaultPlans();
+                updatePlansUI();
+            }
+        }
+
+        function getDefaultPlans() {
+            return [
+                {
+                    id: 'starter',
+                    name: 'Starter Plan',
+                    min: 1000,
+                    max: 5000,
+                    dailyPercent: 1.2,
+                    duration: 15,
+                    refund: true,
+                    active: true
+                },
+                {
+                    id: 'silver',
+                    name: 'Silver Plan',
+                    min: 5000,
+                    max: 15000,
+                    dailyPercent: 1.6,
+                    duration: 25,
+                    refund: true,
+                    active: true
+                },
+                {
+                    id: 'gold',
+                    name: 'Gold Plan',
+                    min: 15000,
+                    max: 50000,
+                    dailyPercent: 2.0,
+                    duration: 30,
+                    refund: true,
+                    active: true
+                },
+                {
+                    id: 'vip',
+                    name: 'VIP Plan',
+                    min: 50000,
+                    max: 200000,
+                    dailyPercent: 2.5,
+                    duration: 40,
+                    refund: true,
+                    active: true
+                }
+            ];
+        }
+
+        function updatePlansUI() {
+            plansGrid.innerHTML = '';
+            window.plans.forEach(plan => {
+                if (!plan.active) return;
+                
+                const card = document.createElement('div');
+                card.className = 'plan-card';
+                card.innerHTML = `
+                    <div class="plan-header">
+                        <div class="plan-name">${plan.name}</div>
+                        <div class="plan-badge">${plan.dailyPercent}% Daily</div>
+                    </div>
+                    <div class="plan-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Min Deposit</span>
+                            <span class="detail-value">${plan.min.toLocaleString()} PKR</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Max Deposit</span>
+                            <span class="detail-value">${plan.max.toLocaleString()} PKR</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration</span>
+                            <span class="detail-value">${plan.duration} Days</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Refund</span>
+                            <span class="detail-value" style="color: var(--success);">${plan.refund ? 'Yes' : 'No'}</span>
+                        </div>
+                    </div>
+                    <div class="plan-actions">
+                        <button class="btn btn-secondary" onclick="openCalculator('${plan.id}')">Calculate</button>
+                        <button class="btn btn-primary" onclick="openInvestModal('${plan.id}')" ${userWalletBalance < plan.min ? 'disabled' : ''}>Invest Now</button>
+                    </div>
+                `;
+                plansGrid.appendChild(card);
+            });
+        }
+
+        // Chart Functions
+        function initChart() {
+            const ctx = document.getElementById('marketChart').getContext('2d');
+            
+            // Generate initial data
+            const initialData = generateChartData(50, selectedAsset.price * 0.9, selectedAsset.price * 1.1);
+            
+            // Create chart
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: initialData.length}, (_, i) => i + 1),
+                    datasets: [{
+                        label: selectedAsset.symbol,
+                        data: initialData,
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `Price: $${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false,
+                            grid: { display: false }
+                        },
+                        y: {
+                            display: false,
+                            grid: { 
+                                display: true,
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: { display: false }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            updateChartStats(initialData);
+        }
+
+        function updateChart() {
+            if (!chart || !selectedAsset) return;
+            
+            // Update chart data based on selected asset
+            const newData = generateChartData(50, selectedAsset.price * 0.9, selectedAsset.price * 1.1);
+            
+            chart.data.datasets[0].data = newData;
+            chart.data.datasets[0].label = selectedAsset.symbol;
+            chart.update('active');
+            
+            updateChartStats(newData);
+        }
+
+        function generateChartData(count, min, max) {
+            const data = [];
+            let current = (min + max) / 2;
+            for (let i = 0; i < count; i++) {
+                const change = (Math.random() - 0.5) * (max - min) * 0.05;
+                current += change;
+                current = Math.max(min, Math.min(max, current));
+                data.push(current);
+            }
+            return data;
+        }
+
+        function updateChartStats(data) {
+            if (!data.length || !selectedAsset) return;
+            
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            
+            currentPrice.textContent = `$${selectedAsset.price.toLocaleString()}`;
+            document.getElementById('highPrice').textContent = max.toFixed(2);
+            document.getElementById('lowPrice').textContent = min.toFixed(2);
+            document.getElementById('dailyChange').textContent = 
+                selectedAsset.change >= 0 ? 
+                `+${selectedAsset.change.toFixed(2)}%` : 
+                `${selectedAsset.change.toFixed(2)}%`;
+            document.getElementById('dailyChange').style.color = 
+                selectedAsset.change >= 0 ? 'var(--success)' : 'var(--danger)';
+        }
+
+        function changeTimeframe(timeframe) {
+            currentTimeframe = timeframe;
+            document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === timeframe) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Update chart data based on timeframe
+            const basePrice = selectedAsset.price;
+            let volatility = 0.05;
+            let dataPoints = 50;
+            
+            switch(timeframe) {
+                case '1H':
+                    volatility = 0.02;
+                    dataPoints = 30;
+                    break;
+                case '24H':
+                    volatility = 0.05;
+                    dataPoints = 50;
+                    break;
+                case '7D':
+                    volatility = 0.1;
+                    dataPoints = 70;
+                    break;
+                case '30D':
+                    volatility = 0.15;
+                    dataPoints = 100;
+                    break;
+            }
+            
+            const newData = generateChartData(dataPoints, basePrice * (1 - volatility), basePrice * (1 + volatility));
+            chart.data.datasets[0].data = newData;
+            chart.update('active');
+            
+            showToast(`${timeframe} timeframe selected`, 'info');
+        }
+
+        // Wallet Functions
+        async function setupWalletListener() {
+            if (!currentUser) return;
+            
+            try {
+                walletListener = db.collection('users').doc(currentUser.uid)
+                    .onSnapshot(async (doc) => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            userWalletBalance = userData.balance || 0;
+                            updateWalletUI();
+                            
+                            // Update plan buttons based on balance
+                            updatePlanButtons();
+                        } else {
+                            // Create user document if it doesn't exist
+                            try {
+                                await db.collection('users').doc(currentUser.uid).set({
+                                    balance: 0,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                    email: currentUser.email,
+                                    totalInvested: 0,
+                                    totalProfit: 0,
+                                    activeInvestments: 0
+                                });
+                            } catch (error) {
+                                console.error('Error creating user document:', error);
+                            }
+                        }
+                    }, (error) => {
+                        console.error('Wallet listener error:', error);
+                        showToast('Failed to load wallet balance', 'error');
+                    });
+            } catch (error) {
+                console.error('Error setting up wallet listener:', error);
+            }
+        }
+
+        function updateWalletUI() {
+            walletAmount.textContent = `${userWalletBalance.toLocaleString()} PKR`;
+        }
+
+        function updatePlanButtons() {
+            if (!window.plans) return;
+            
+            document.querySelectorAll('.plan-actions .btn-primary').forEach((btn, index) => {
+                const plan = window.plans[index];
+                if (plan && userWalletBalance < plan.min) {
+                    btn.disabled = true;
+                    btn.title = `Minimum ${plan.min} PKR required`;
+                } else if (plan) {
+                    btn.disabled = false;
+                    btn.title = '';
+                }
+            });
+        }
+
+        async function refreshWalletBalance() {
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists) {
+                    userWalletBalance = userDoc.data().balance || 0;
+                    updateWalletUI();
+                    updatePlanButtons();
+                    showToast('Balance refreshed!', 'success');
+                }
+            } catch (error) {
+                console.error('Error refreshing balance:', error);
+                showToast('Failed to refresh balance', 'error');
+            }
+        }
+
+        // Investment Functions
+        async function loadInvestments() {
+            if (!currentUser) return;
+            
+            try {
+                // Fix for the index error - Use simpler query without orderBy
+                investmentsListener = db.collection('investments')
+                    .where('userId', '==', currentUser.uid)
+                    .where('status', '==', 'active')
+                    .onSnapshot((snapshot) => {
+                        const investments = [];
+                        snapshot.forEach(doc => {
+                            investments.push({ id: doc.id, ...doc.data() });
+                        });
+                        
+                        // Sort manually by createdAt in memory
+                        investments.sort((a, b) => {
+                            const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                            const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                            return dateB - dateA;
+                        });
+                        
+                        updateInvestmentsUI(investments);
+                        updateInvestmentCount(investments.length);
+                    }, (error) => {
+                        console.error('Investments listener error:', error);
+                        
+                        // If index error, show instructions to create index
+                        if (error.code === 'failed-precondition') {
+                            showToast('Please create the required index in Firebase Console', 'warning');
+                        }
+                    });
+            } catch (error) {
+                console.error('Error loading investments:', error);
+            }
+        }
+
+        function updateInvestmentsUI(investments) {
+            if (investments.length === 0) {
+                investmentsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                        </svg>
+                        <h3>No Active Investments</h3>
+                        <p>Start investing to see your active plans here</p>
+                        <button class="btn btn-primary" style="margin-top: 20px;" onclick="scrollToPlans()">View Plans</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            investmentsGrid.innerHTML = '';
+            investments.forEach(investment => {
+                const now = new Date();
+                const startDate = investment.startDate?.toDate ? investment.startDate.toDate() : new Date(investment.startDate);
+                const endDate = investment.endDate?.toDate ? investment.endDate.toDate() : new Date(investment.endDate);
+                
+                const daysPassed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+                const daysLeft = Math.max(0, investment.duration - daysPassed);
+                const progress = Math.min(100, (daysPassed / investment.duration) * 100);
+                
+                const dailyProfit = investment.amount * investment.dailyPercent / 100;
+                const totalProfit = dailyProfit * investment.duration;
+                const earnedProfit = dailyProfit * daysPassed;
+                
+                // Calculate next payout time
+                const nextPayout = new Date(startDate);
+                nextPayout.setDate(nextPayout.getDate() + daysPassed + 1);
+                const timeToNextPayout = nextPayout - now;
+                const hoursToPayout = Math.floor(timeToNextPayout / (1000 * 60 * 60));
+                
+                const card = document.createElement('div');
+                card.className = 'investment-card';
+                card.innerHTML = `
+                    <div class="investment-header">
+                        <div class="investment-asset">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            <span>${investment.asset} - ${investment.planName}</span>
+                        </div>
+                        <div class="status-badge status-running">Running</div>
+                    </div>
+                    <div class="investment-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Invested</span>
+                            <span class="detail-value">${investment.amount.toLocaleString()} PKR</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Daily Profit</span>
+                            <span class="detail-value profit-value">${dailyProfit.toFixed(2)} PKR</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Start Date</span>
+                            <span class="detail-value">${startDate.toLocaleDateString()}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Earned Profit</span>
+                            <span class="detail-value profit-value">${earnedProfit.toFixed(2)} PKR</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Next Payout</span>
+                            <span class="detail-value">${hoursToPayout}h</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Total Return</span>
+                            <span class="detail-value profit-value">${totalProfit.toFixed(2)} PKR</span>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span>Day ${daysPassed} of ${investment.duration} (${daysLeft} left)</span>
+                            <span>${progress.toFixed(1)}%</span>
+                        </div>
+                    </div>
+                    <div class="investment-actions">
+                        <button class="btn btn-secondary" onclick="showInvestmentDetails('${investment.id}')">Details</button>
+                        <button class="btn btn-primary" onclick="withdrawProfit('${investment.id}')" ${earnedProfit < 1 ? 'disabled' : ''}>
+                            Withdraw Profit (${earnedProfit.toFixed(2)} PKR)
+                        </button>
+                    </div>
+                `;
+                investmentsGrid.appendChild(card);
+            });
+        }
+
+        function updateInvestmentCount(count) {
+            investmentCount.textContent = `(${count})`;
+        }
+
+        function scrollToPlans() {
+            document.querySelector('.section-title').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showInvestmentDetails(investmentId) {
+            showToast('Investment details will be shown here', 'info');
+        }
+
+        async function withdrawProfit(investmentId) {
+            // Implementation for profit withdrawal
+            showToast('Profit withdrawal feature coming soon!', 'warning');
+        }
+
+        // Modal Functions
+        function openInvestModal(planId) {
+            selectedPlan = window.plans.find(p => p.id === planId);
+            if (!selectedPlan || !selectedAsset) return;
+            
+            document.getElementById('modalAsset').value = selectedAsset.name;
+            document.getElementById('modalPlan').value = selectedPlan.name;
+            document.getElementById('modalAmount').value = selectedPlan.min;
+            document.getElementById('modalWalletBalance').textContent = `${userWalletBalance.toLocaleString()} PKR`;
+            
+            // Check balance
+            checkBalanceForInvestment(selectedPlan.min);
+            
+            // Update summary
+            updateInvestmentSummary(selectedPlan.min);
+            
+            investModal.style.display = 'flex';
+        }
+
+        function checkBalanceForInvestment(amount) {
+            const insufficientBalance = document.getElementById('insufficientBalance');
+            const afterBalance = document.getElementById('modalAfterBalance');
+            const confirmBtn = document.getElementById('confirmBtn');
+            
+            if (userWalletBalance < amount) {
+                insufficientBalance.style.display = 'block';
+                afterBalance.textContent = `${userWalletBalance.toLocaleString()} PKR`;
+                afterBalance.style.color = 'var(--danger)';
+                confirmBtn.disabled = true;
+                return false;
+            } else {
+                insufficientBalance.style.display = 'none';
+                const newBalance = userWalletBalance - amount;
+                afterBalance.textContent = `${newBalance.toLocaleString()} PKR`;
+                afterBalance.style.color = 'var(--success)';
+                confirmBtn.disabled = false;
+                return true;
+            }
+        }
+
+        function closeModal() {
+            investModal.style.display = 'none';
+            selectedPlan = null;
+        }
+
+        async function confirmInvestment() {
+            const amountInput = document.getElementById('modalAmount');
+            const amount = parseFloat(amountInput.value);
+            
+            if (!selectedPlan || !amount || !currentUser) {
+                showToast('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            if (amount < selectedPlan.min || amount > selectedPlan.max) {
+                document.getElementById('amountError').style.display = 'block';
+                return;
+            }
+            
+            // Check balance again
+            if (userWalletBalance < amount) {
+                document.getElementById('insufficientBalance').style.display = 'block';
+                showToast('Insufficient balance!', 'error');
+                return;
+            }
+            
+            document.getElementById('amountError').style.display = 'none';
+            
+            // Show loading
+            const confirmBtn = document.getElementById('confirmBtn');
+            const originalText = confirmBtn.textContent;
+            confirmBtn.classList.add('loading');
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Processing...';
+            
+            try {
+                // Create investment record
+                const investmentData = {
+                    userId: currentUser.uid,
+                    planId: selectedPlan.id,
+                    planName: selectedPlan.name,
+                    asset: selectedAsset.symbol,
+                    assetName: selectedAsset.name,
+                    amount: amount,
+                    dailyPercent: selectedPlan.dailyPercent,
+                    duration: selectedPlan.duration,
+                    totalProfit: amount * selectedPlan.dailyPercent * selectedPlan.duration / 100,
+                    startDate: firebase.firestore.FieldValue.serverTimestamp(),
+                    endDate: new Date(Date.now() + selectedPlan.duration * 24 * 60 * 60 * 1000),
+                    status: 'active',
+                    refundPrincipal: selectedPlan.refund,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    currentProfit: 0,
+                    lastPayout: null
+                };
+                
+                // Use batch write for atomic operations
+                const batch = db.batch();
+                
+                // Create investment document
+                const investmentRef = db.collection('investments').doc();
+                batch.set(investmentRef, investmentData);
+                
+                // Update user balance
+                const userRef = db.collection('users').doc(currentUser.uid);
+                const userDoc = await userRef.get();
+                const currentBalance = userDoc.exists ? (userDoc.data().balance || 0) : 0;
+                
+                batch.update(userRef, {
+                    balance: currentBalance - amount,
+                    totalInvested: firebase.firestore.FieldValue.increment(amount),
+                    activeInvestments: firebase.firestore.FieldValue.increment(1),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Create transaction record
+                const transactionRef = db.collection('transactions').doc();
+                batch.set(transactionRef, {
+                    userId: currentUser.uid,
+                    type: 'investment',
+                    amount: amount,
+                    status: 'completed',
+                    description: `Investment in ${selectedAsset.symbol} - ${selectedPlan.name}`,
+                    investmentId: investmentRef.id,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    newBalance: currentBalance - amount
+                });
+                
+                // Commit batch
+                await batch.commit();
+                
+                // Success
+                closeModal();
+                showToast(`Investment of ${amount} PKR successful!`, 'success');
+                
+            } catch (error) {
+                console.error('Investment error:', error);
+                showToast(error.message || 'Investment failed. Please try again.', 'error');
+            } finally {
+                confirmBtn.classList.remove('loading');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText;
+            }
+        }
+
+        function openCalculator(planId) {
+            const plan = window.plans.find(p => p.id === planId);
+            if (!plan) return;
+            
+            document.getElementById('calcPlanName').value = plan.name;
+            document.getElementById('calcDailyPercent').value = `${plan.dailyPercent}%`;
+            document.getElementById('calcDuration').value = `${plan.duration} days`;
+            document.getElementById('calcAmount').value = plan.min;
+            
+            // Calculate initial values
+            calculateProfitForModal(plan, plan.min);
+            
+            document.getElementById('calculateModal').style.display = 'flex';
+        }
+
+        function closeCalculateModal() {
+            document.getElementById('calculateModal').style.display = 'none';
+        }
+
+        function calculateProfit() {
+            const plan = window.plans.find(p => p.name === document.getElementById('calcPlanName').value);
+            const amount = parseFloat(document.getElementById('calcAmount').value);
+            
+            if (!plan || !amount || amount < plan.min || amount > plan.max) {
+                document.getElementById('calcAmountError').style.display = 'block';
+                document.getElementById('calcAmountError').textContent = 
+                    `Amount must be between ${plan.min.toLocaleString()} and ${plan.max.toLocaleString()} PKR`;
+                return;
+            }
+            
+            document.getElementById('calcAmountError').style.display = 'none';
+            calculateProfitForModal(plan, amount);
+        }
+
+        function calculateProfitForModal(plan, amount) {
+            const dailyProfit = amount * plan.dailyPercent / 100;
+            const totalProfit = dailyProfit * plan.duration;
+            const totalReturn = totalProfit + (plan.refund ? amount : 0);
+            
+            document.getElementById('calcDailyProfit').textContent = `${dailyProfit.toFixed(2)} PKR`;
+            document.getElementById('calcTotalProfit').textContent = `${totalProfit.toFixed(2)} PKR`;
+            document.getElementById('calcTotalReturn').textContent = `${totalReturn.toFixed(2)} PKR`;
+        }
+
+        function updateInvestmentSummary(amount) {
+            if (!selectedPlan) return;
+            
+            const dailyProfit = amount * selectedPlan.dailyPercent / 100;
+            const totalProfit = dailyProfit * selectedPlan.duration;
+            const totalReturn = totalProfit + (selectedPlan.refund ? amount : 0);
+            
+            document.getElementById('summaryDaily').textContent = `${dailyProfit.toFixed(2)} PKR`;
+            document.getElementById('summaryTotal').textContent = `${totalProfit.toFixed(2)} PKR`;
+            document.getElementById('summaryReturn').textContent = `${totalReturn.toFixed(2)} PKR`;
+            
+            // Update balance check
+            checkBalanceForInvestment(amount);
+        }
+
+        // Real-time Updates
+        function startRealTimeUpdates() {
+            // Simulate real-time price updates
+            priceUpdateInterval = setInterval(() => {
+                updateAssetPrices();
+            }, 3000); // Update every 3 seconds
+            
+            // Update investment progress every minute
+            setInterval(() => {
+                updateInvestmentProgress();
+            }, 60000);
+        }
+
+        function updateAssetPrices() {
+            if (!window.assets) return;
+            
+            window.assets.forEach(asset => {
+                // Simulate realistic price movements
+                const volatility = 0.02; // 2% volatility
+                const changePercent = (Math.random() - 0.5) * volatility * 100;
+                const change = asset.price * (changePercent / 100);
+                asset.price += change;
+                asset.change = changePercent;
+                
+                // Keep prices within realistic ranges
+                switch(asset.id) {
+                    case 'btc':
+                        asset.price = Math.max(45000, Math.min(85000, asset.price));
+                        break;
+                    case 'eth':
+                        asset.price = Math.max(2500, Math.min(4500, asset.price));
+                        break;
+                    case 'gold':
+                        asset.price = Math.max(1900, Math.min(2300, asset.price));
+                        break;
+                    case 'silver':
+                        asset.price = Math.max(22, Math.min(28, asset.price));
+                        break;
+                }
+            });
+            
+            // Update UI if this asset is selected
+            if (selectedAsset) {
+                const assetIndex = window.assets.findIndex(a => a.id === selectedAsset.id);
+                if (assetIndex !== -1) {
+                    selectedAsset = window.assets[assetIndex];
+                    updateAssetUI();
+                    
+                    // Update chart with new price data
+                    const newData = generateChartData(
+                        50, 
+                        selectedAsset.price * 0.95, 
+                        selectedAsset.price * 1.05
+                    );
+                    
+                    if (chart) {
+                        // Add new data point and remove oldest
+                        chart.data.datasets[0].data.push(selectedAsset.price);
+                        if (chart.data.datasets[0].data.length > 50) {
+                            chart.data.datasets[0].data.shift();
+                        }
+                        chart.update('active');
+                    }
+                    
+                    updateChartStats(newData);
+                }
+            }
+        }
+
+        function updateInvestmentProgress() {
+            // This function would update investment progress in real-time
+            // For now, just trigger a refresh of investments
+            if (investmentsListener) {
+                // The listener will automatically update
+            }
+        }
+
+        // Toast System
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            toastContainer.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Remove after delay
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Event Listeners
+        document.getElementById('modalAmount').addEventListener('input', (e) => {
+            const amount = parseFloat(e.target.value);
+            if (selectedPlan && amount) {
+                updateInvestmentSummary(amount);
+                document.getElementById('amountError').style.display = 
+                    (amount < selectedPlan.min || amount > selectedPlan.max) ? 'block' : 'none';
+            }
+        });
+
+        document.getElementById('calcAmount').addEventListener('input', (e) => {
+            document.getElementById('calcAmountError').style.display = 'none';
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (walletListener) walletListener();
+            if (investmentsListener) investmentsListener();
+            if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+        });
+
+        // Resize handler for chart
+        window.addEventListener('resize', () => {
+            if (chart) {
+                chart.resize();
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (investModal.style.display === 'flex') {
+                    closeModal();
+                }
+                if (document.getElementById('calculateModal').style.display === 'flex') {
+                    closeCalculateModal();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
