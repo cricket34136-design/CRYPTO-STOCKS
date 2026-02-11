@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InviteGain - Referral System</title>
+    <title>CRYPTO STOCKS - Referral System</title>
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase SDK -->
@@ -657,7 +657,7 @@
 
     <!-- Top Navbar -->
     <nav class="top-nav">
-        <div class="logo">INVITEGAIN</div>
+        <div class="logo">CRYPTO STOCKS</div>
         <div class="wallet-balance" id="walletBalance">
             <span>Balance: <span class="wallet-amount" id="walletAmount">Loading...</span></span>
             <button class="refresh-btn" onclick="refreshWalletBalance()">
@@ -853,421 +853,391 @@
         </button>
     </nav>
 
-    <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAYDVkQygUuLtS8ZIRJF6m1s3t-_hF89DY",
-            authDomain: "invitegain-6ce0d.firebaseapp.com",
-            projectId: "invitegain-6ce0d",
-            storageBucket: "invitegain-6ce0d.firebasestorage.app",
-            messagingSenderId: "586313606242",
-            appId: "1:586313606242:web:ae8da69bb8003bdd799d3b",
-            measurementId: "G-T4RBRVEN1F"
+   <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAYDVkQygUuLtS8ZIRJF6m1s3t-_hF89DY",
+        authDomain: "invitegain-6ce0d.firebaseapp.com",
+        projectId: "invitegain-6ce0d",
+        storageBucket: "invitegain-6ce0d.firebasestorage.app",
+        messagingSenderId: "586313606242",
+        appId: "1:586313606242:web:ae8da69bb8003bdd799d3b",
+        measurementId: "G-T4RBRVEN1F"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // State
+    let currentUser = null;
+    let currentUserReferralCode = '';
+    let currentFilter = 'all';
+    let currentSearch = '';
+    let allMembers = [];
+    let unsubscribeMembers = null;
+    let unsubscribeStats = null;
+
+    // DOM Elements
+    const toastContainer = document.querySelector('.toast-container');
+    const walletAmount = document.getElementById('walletAmount');
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        checkAuthState();
+        
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                refreshWalletBalance();
+            }
+        });
+        
+        document.getElementById('dashboardBtn').addEventListener('click', showFeatureComingSoon);
+        document.getElementById('investmentBtn').addEventListener('click', showFeatureComingSoon);
+    });
+
+    function showFeatureComingSoon() {
+        showCustomToast(
+            '🚀 Coming Soon!',
+            'Dashboard and Investment will be available after 10 days. For now, you can earn via Referral only. Deposit bonus: +20% on every deposit. Withdraw will be available when your referral earnings become equal to your deposit.',
+            'warning'
+        );
+    }
+
+    function showCustomToast(title, message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            info: 'fa-info-circle',
+            warning: 'fa-rocket'
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
+        toast.innerHTML = `
+            <i class="fas ${icons[type]}" style="color: var(--warning); font-size: 1.2rem;"></i>
+            <div style="flex: 1; margin-left: 10px;">
+                <div style="font-weight: 600; margin-bottom: 4px; font-size: 0.95rem; color: var(--warning);">${title}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">${message}</div>
+            </div>
+            <button class="modal-close" style="width: 28px; height: 28px; font-size: 1rem; background: none; border: none; color: var(--text); cursor: pointer;" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
 
-        // State
-        let currentUser = null;
-        let currentUserReferralCode = '';
-        let currentFilter = 'all';
-        let currentSearch = '';
-        let allMembers = [];
-        let unsubscribeMembers = null;
-        let unsubscribeStats = null;
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 10);
 
-        // DOM Elements
-        const toastContainer = document.querySelector('.toast-container');
-        const walletAmount = document.getElementById('walletAmount');
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuthState();
-            
-            // Add visibility change listener for balance refresh
-            document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) {
-                    refreshWalletBalance();
-                }
-            });
-            
-            // FIXED: Add event listeners for Dashboard and Investment buttons
-            document.getElementById('dashboardBtn').addEventListener('click', showFeatureComingSoon);
-            document.getElementById('investmentBtn').addEventListener('click', showFeatureComingSoon);
-        });
-
-        // ========== FEATURE COMING SOON ==========
-        function showFeatureComingSoon() {
-            showCustomToast(
-                '🚀 Coming Soon!',
-                'Dashboard and Investment will be available after 10 days. For now, you can earn via Referral only. Deposit bonus: +20% on every deposit. Withdraw will be available when your referral earnings become equal to your deposit.',
-                'warning'
-            );
-        }
-
-        function showCustomToast(title, message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                info: 'fa-info-circle',
-                warning: 'fa-rocket'
-            };
-
-            toast.innerHTML = `
-                <i class="fas ${icons[type]}" style="color: var(--warning); font-size: 1.2rem;"></i>
-                <div style="flex: 1; margin-left: 10px;">
-                    <div style="font-weight: 600; margin-bottom: 4px; font-size: 0.95rem; color: var(--warning);">${title}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">${message}</div>
-                </div>
-                <button class="modal-close" style="width: 28px; height: 28px; font-size: 1rem; background: none; border: none; color: var(--text); cursor: pointer;" onclick="this.parentElement.remove()">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-
-            toastContainer.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.classList.add('show');
-            }, 10);
-
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.classList.remove('show');
-                    setTimeout(() => {
-                        if (toast.parentElement) {
-                            toast.remove();
-                        }
-                    }, 300);
-                }
-            }, 5000);
-        }
-
-        // ========== AUTHENTICATION FUNCTIONS ==========
-        function checkAuthState() {
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    currentUser = user;
-                    loadUserData(user.uid);
-                    refreshWalletBalance();
-                } else {
-                    window.location.href = 'index.html';
-                }
-            }, (error) => {
-                console.error('Auth state error:', error);
-                window.location.href = 'index.html';
-            });
-        }
-
-        // ========== WALLET FUNCTIONS ==========
-        async function refreshWalletBalance() {
-            try {
-                if (!currentUser) return;
-                
-                const userDoc = await db.collection('users').doc(currentUser.uid).get();
-                if (userDoc.exists) {
-                    const data = userDoc.data();
-                    const balance = data.balance || data.accountBalance || 0;
-                    walletAmount.textContent = `${balance.toLocaleString()} PKR`;
-                }
-            } catch (error) {
-                console.error('Error refreshing balance:', error);
-            }
-        }
-
-        // ========== USER DATA FUNCTIONS ==========
-        async function loadUserData(userId) {
-            try {
-                const userDoc = await db.collection('users').doc(userId).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    
-                    // Update UI
-                    document.getElementById('userName').textContent = userData.name || userData.fullName || 'User';
-                    document.getElementById('userUsername').textContent = `@${userData.username || 'user'}`;
-                    
-                    // Get referral code
-                    currentUserReferralCode = userData.referralCode || '';
-                    document.getElementById('referralCode').textContent = currentUserReferralCode || 'NOCODE';
-                    
-                    // FIXED: Generate correct referral link with ref parameter
-                    const baseUrl = window.location.origin;
-                    const referralLink = `${baseUrl}/index.html?ref=${currentUserReferralCode || 'nocode'}`;
-                    document.getElementById('referralLink').value = referralLink;
-                    
-                    console.log('✅ Loaded user referral code:', currentUserReferralCode);
-                    console.log('🔗 Referral link:', referralLink);
-                    
-                    // Setup realtime listeners AFTER we have the referral code
-                    setupRealtimeListeners(userId);
-                    
-                } else {
-                    showToast('User data not found', 'error');
-                }
-            } catch (error) {
-                console.error('Error loading user data:', error);
-                showToast('Error loading user data', 'error');
-            }
-        }
-
-        // ========== REALTIME LISTENERS ==========
-        function setupRealtimeListeners(userId) {
-            // Listen for referral stats changes
-            unsubscribeStats = db.collection('referralStats')
-                .doc(userId)
-                .onSnapshot(async (doc) => {
-                    if (doc.exists) {
-                        const stats = doc.data();
-                        updateStatsUI(stats);
-                    } else {
-                        // Create default stats if doesn't exist
-                        const defaultStats = {
-                            totalReferrals: 0,
-                            activeReferrals: 0,
-                            totalEarnings: 0,
-                            todayEarnings: 0,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        };
-                        try {
-                            await db.collection('referralStats').doc(userId).set(defaultStats);
-                            updateStatsUI(defaultStats);
-                        } catch (error) {
-                            console.error('Error creating default stats:', error);
-                        }
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.remove();
                     }
-                }, (error) => {
-                    console.error('Error listening to stats:', error);
-                    showToast('Error loading stats', 'error');
-                });
-
-            // ========== FIXED: Listen for direct members who used this user's referral code ==========
-            if (!currentUserReferralCode) {
-                console.error('❌ No referral code found for current user');
-                showToast('No referral code found for your account', 'warning');
-                return;
+                }, 300);
             }
+        }, 5000);
+    }
 
-            console.log('🔍 Setting up members listener for referral code:', currentUserReferralCode);
-            
-            // IMPORTANT FIX: Query for users where referredBy EXACTLY matches this user's referral code
-            unsubscribeMembers = db.collection('users')
-                .where('referredBy', '==', currentUserReferralCode)
-                .onSnapshot((snapshot) => {
-                    console.log('📊 Members snapshot received, size:', snapshot.size);
-                    
-                    allMembers = [];
-                    snapshot.forEach((doc) => {
-                        const member = doc.data();
-                        member.id = doc.id;
-                        
-                        // Log each member for debugging
-                        console.log('✅ Found referral:', member.username || 'user', 
-                                  'referredBy:', member.referredBy);
-                        
-                        // Ensure required fields exist
-                        if (!member.name && member.fullName) {
-                            member.name = member.fullName;
-                        }
-                        
-                        // Check if member has invested
-                        const hasInvested = member.hasInvested === true || 
-                                           (member.totalInvested && member.totalInvested > 0) ||
-                                           member.activeInvestments > 0;
-                        
-                        member.hasInvested = hasInvested;
-                        
-                        allMembers.push(member);
-                    });
-                    
-                    console.log(`📈 Total members who used code ${currentUserReferralCode}:`, allMembers.length);
-                    
-                    updateMembersCount();
-                    renderMembersTable();
-                    renderActiveMembersCard();
-                    
-                    // Update stats based on actual members
-                    updateReferralStats();
-                    
-                }, (error) => {
-                    console.error('❌ Error listening to members:', error);
-                    showToast('Error loading members', 'error');
-                });
-        }
+    function checkAuthState() {
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                console.log('✅ User authenticated:', user.uid);
+                loadUserData(user.uid);
+                refreshWalletBalance();
+            } else {
+                console.log('❌ No user authenticated, redirecting to index');
+                window.location.href = 'index.html';
+            }
+        }, (error) => {
+            console.error('Auth state error:', error);
+            window.location.href = 'index.html';
+        });
+    }
 
-        // ========== UI UPDATE FUNCTIONS ==========
-        function updateStatsUI(stats) {
-            document.getElementById('totalReferrals').textContent = stats.totalReferrals || 0;
-            document.getElementById('activeReferrals').textContent = stats.activeReferrals || 0;
-            document.getElementById('totalEarnings').textContent = (stats.totalEarnings || 0).toLocaleString();
-            document.getElementById('todayEarnings').textContent = (stats.todayEarnings || 0).toLocaleString();
-        }
-
-        // Update referral stats based on actual members
-        async function updateReferralStats() {
+    async function refreshWalletBalance() {
+        try {
             if (!currentUser) return;
             
-            try {
-                const activeCount = allMembers.filter(m => m.hasInvested === true).length;
-                const totalCount = allMembers.length;
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            if (userDoc.exists) {
+                const data = userDoc.data();
+                const balance = data.balance || data.accountBalance || 0;
+                walletAmount.textContent = `${balance.toLocaleString()} PKR`;
+            }
+        } catch (error) {
+            console.error('Error refreshing balance:', error);
+        }
+    }
+
+    async function loadUserData(userId) {
+        try {
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
                 
-                // Update stats in Firestore
-                await db.collection('referralStats').doc(currentUser.uid).update({
+                document.getElementById('userName').textContent = userData.name || userData.fullName || 'User';
+                document.getElementById('userUsername').textContent = `@${userData.username || 'user'}`;
+                
+                currentUserReferralCode = userData.referralCode || '';
+                document.getElementById('referralCode').textContent = currentUserReferralCode || 'NOCODE';
+                
+                const baseUrl = window.location.origin;
+                const referralLink = `${baseUrl}/index.html?ref=${currentUserReferralCode || 'nocode'}`;
+                document.getElementById('referralLink').value = referralLink;
+                
+                console.log('✅ Loaded user referral code:', currentUserReferralCode);
+                console.log('🔗 Referral link:', referralLink);
+                
+                if (currentUserReferralCode) {
+                    setupRealtimeListeners(userId);
+                } else {
+                    console.error('❌ No referral code found for user');
+                    showToast('No referral code found for your account', 'warning');
+                }
+            } else {
+                showToast('User data not found', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            showToast('Error loading user data', 'error');
+        }
+    }
+
+    function setupRealtimeListeners(userId) {
+        console.log('🔍 Setting up realtime listeners for user:', userId);
+        
+        // Listen for referral stats changes
+        unsubscribeStats = db.collection('referralStats')
+            .doc(userId)
+            .onSnapshot((doc) => {
+                if (doc.exists) {
+                    const stats = doc.data();
+                    updateStatsUI(stats);
+                } else {
+                    const defaultStats = {
+                        totalReferrals: 0,
+                        activeReferrals: 0,
+                        totalEarnings: 0,
+                        todayEarnings: 0,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    db.collection('referralStats').doc(userId).set(defaultStats);
+                    updateStatsUI(defaultStats);
+                }
+            }, (error) => {
+                console.error('Error listening to stats:', error);
+            });
+
+        // ========== FIXED: Listen for members who were referred by this user ==========
+        if (!currentUserReferralCode) {
+            console.error('❌ No referral code for listeners');
+            return;
+        }
+
+        console.log('🔍 Setting up members listener for referral code:', currentUserReferralCode);
+        
+        // IMPORTANT FIX: Query for users where referredBy exactly matches this user's referral code
+        unsubscribeMembers = db.collection('users')
+            .where('referredBy', '==', currentUserReferralCode)
+            .onSnapshot((snapshot) => {
+                console.log('📊 Members snapshot received, size:', snapshot.size);
+                
+                allMembers = [];
+                snapshot.forEach((doc) => {
+                    const member = doc.data();
+                    member.id = doc.id;
+                    
+                    console.log('✅ Found referred member:', member.username || member.email, 
+                              'referredBy:', member.referredBy);
+                    
+                    if (!member.name && member.fullName) {
+                        member.name = member.fullName;
+                    }
+                    
+                    const hasInvested = member.hasInvested === true || 
+                                       (member.totalInvested && member.totalInvested > 0) ||
+                                       member.activeInvestments > 0;
+                    
+                    member.hasInvested = hasInvested;
+                    
+                    allMembers.push(member);
+                });
+                
+                console.log(`📈 Total members who used code ${currentUserReferralCode}:`, allMembers.length);
+                
+                updateMembersCount();
+                renderMembersTable();
+                renderActiveMembersCard();
+                updateReferralStatsFromMembers();
+                
+            }, (error) => {
+                console.error('❌ Error listening to members:', error);
+                showToast('Error loading members', 'error');
+            });
+    }
+
+    function updateStatsUI(stats) {
+        document.getElementById('totalReferrals').textContent = stats.totalReferrals || 0;
+        document.getElementById('activeReferrals').textContent = stats.activeReferrals || 0;
+        document.getElementById('totalEarnings').textContent = (stats.totalEarnings || 0).toLocaleString();
+        document.getElementById('todayEarnings').textContent = (stats.todayEarnings || 0).toLocaleString();
+    }
+
+    async function updateReferralStatsFromMembers() {
+        if (!currentUser) return;
+        
+        try {
+            const activeCount = allMembers.filter(m => m.hasInvested === true).length;
+            const totalCount = allMembers.length;
+            
+            const statsRef = db.collection('referralStats').doc(currentUser.uid);
+            const statsDoc = await statsRef.get();
+            
+            if (statsDoc.exists) {
+                await statsRef.update({
                     totalReferrals: totalCount,
                     activeReferrals: activeCount,
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                }).catch(async (error) => {
-                    // If document doesn't exist, create it
-                    if (error.code === 'not-found') {
-                        await db.collection('referralStats').doc(currentUser.uid).set({
-                            totalReferrals: totalCount,
-                            activeReferrals: activeCount,
-                            totalEarnings: 0,
-                            todayEarnings: 0,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }
                 });
-            } catch (error) {
-                console.error('Error updating referral stats:', error);
+            } else {
+                await statsRef.set({
+                    totalReferrals: totalCount,
+                    activeReferrals: activeCount,
+                    totalEarnings: 0,
+                    todayEarnings: 0,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
             }
+            
+            console.log(`📊 Updated stats: ${totalCount} total, ${activeCount} active`);
+        } catch (error) {
+            console.error('Error updating referral stats:', error);
         }
+    }
 
-        function updateMembersCount() {
-            const count = allMembers.length;
-            const countElement = document.getElementById('membersCount');
-            if (countElement) {
-                countElement.textContent = `${count} Member${count !== 1 ? 's' : ''}`;
-            }
+    function updateMembersCount() {
+        const count = allMembers.length;
+        const countElement = document.getElementById('membersCount');
+        if (countElement) {
+            countElement.textContent = `${count} Member${count !== 1 ? 's' : ''}`;
         }
+    }
 
-        // ========== FIXED: Render Members Table - Shows who used your code ==========
-        function renderMembersTable() {
-            const container = document.getElementById('membersTable');
-            if (!container) return;
-            
-            // Show loading if no members yet
-            if (allMembers.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                        </svg>
-                        <p>No one has used your referral code yet</p>
-                        <p style="margin-top:10px;font-size:0.9rem;color:var(--primary)">
-                            Share your code to earn 10% commission!
-                        </p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let membersToShow = allMembers;
-            
-            // Apply search filter
-            if (currentSearch) {
-                membersToShow = membersToShow.filter(m => 
-                    (m.name && m.name.toLowerCase().includes(currentSearch.toLowerCase())) ||
-                    (m.fullName && m.fullName.toLowerCase().includes(currentSearch.toLowerCase())) ||
-                    (m.username && m.username.toLowerCase().includes(currentSearch.toLowerCase()))
-                );
-            }
-            
-            // Apply status filter
-            if (currentFilter === 'active') {
-                membersToShow = membersToShow.filter(m => m.hasInvested === true);
-            } else if (currentFilter === 'inactive') {
-                membersToShow = membersToShow.filter(m => m.hasInvested !== true);
-            }
-            
-            if (membersToShow.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                        </svg>
-                        <p>${currentSearch ? 'No members found' : 'No referrals in this category'}</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Username</th>
-                            <th>Joined</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+    // ========== FIXED: Render Members Table - Shows who used your referral code ==========
+    function renderMembersTable() {
+        const container = document.getElementById('membersTable');
+        if (!container) return;
+        
+        if (allMembers.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                    </svg>
+                    <p>No one has used your referral code yet</p>
+                    <p style="margin-top:10px;font-size:0.9rem;color:var(--primary)">
+                        Share your code <strong>${currentUserReferralCode}</strong> to earn 10% commission!
+                    </p>
+                </div>
             `;
-            
-            membersToShow.forEach(member => {
-                const joinDate = member.createdAt ? 
-                    new Date(member.createdAt.seconds * 1000).toLocaleDateString() : 
-                    member.registrationDate ? 
-                    new Date(member.registrationDate).toLocaleDateString() : 
-                    'N/A';
-                
-                const isActive = member.hasInvested === true;
-                
-                html += `
-                    <tr>
-                        <td>
-                            <strong>${member.name || member.fullName || 'Anonymous'}</strong>
-                        </td>
-                        <td>@${member.username || 'user'}</td>
-                        <td>${joinDate}</td>
-                        <td>
-                            <span class="status ${isActive ? 'active' : 'inactive'}">
-                                ${isActive ? '✅ Active' : '⏳ Pending'}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            return;
         }
-
-        async function renderActiveMembersCard() {
-            const container = document.getElementById('activeMembersCard');
-            if (!container) return;
-            
-            const activeMembers = allMembers.filter(m => m.hasInvested === true);
-            
-            if (activeMembers.length === 0) {
-                container.innerHTML = `
-                    <div class="card-header">
-                        <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>
-                            </svg>
-                            <span>Active Members Investment</span>
-                        </div>
-                    </div>
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                            <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>
-                        </svg>
-                        <p>No active members with investments</p>
-                        <p style="margin-top:10px;font-size:0.9rem">When your referrals invest, you'll earn 10% commission!</p>
-                    </div>
-                `;
-                return;
+        
+        let membersToShow = allMembers;
+        
+        if (currentSearch) {
+            membersToShow = membersToShow.filter(m => 
+                (m.name && m.name.toLowerCase().includes(currentSearch.toLowerCase())) ||
+                (m.fullName && m.fullName.toLowerCase().includes(currentSearch.toLowerCase())) ||
+                (m.username && m.username.toLowerCase().includes(currentSearch.toLowerCase())) ||
+                (m.email && m.email.toLowerCase().includes(currentSearch.toLowerCase()))
+            );
+        }
+        
+        if (currentFilter === 'active') {
+            membersToShow = membersToShow.filter(m => m.hasInvested === true);
+        } else if (currentFilter === 'inactive') {
+            membersToShow = membersToShow.filter(m => m.hasInvested !== true);
+        }
+        
+        if (membersToShow.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                    </svg>
+                    <p>${currentSearch ? 'No members found' : 'No referrals in this category'}</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Username</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        membersToShow.forEach(member => {
+            let joinDate = 'N/A';
+            if (member.createdAt) {
+                if (member.createdAt.seconds) {
+                    joinDate = new Date(member.createdAt.seconds * 1000).toLocaleDateString();
+                } else if (member.createdAt.toDate) {
+                    joinDate = member.createdAt.toDate().toLocaleDateString();
+                }
+            } else if (member.registrationDate) {
+                joinDate = new Date(member.registrationDate).toLocaleDateString();
             }
             
-            let html = `
+            const isActive = member.hasInvested === true;
+            const displayName = member.name || member.fullName || member.email || 'Anonymous';
+            
+            html += `
+                <tr>
+                    <td>
+                        <strong>${displayName}</strong>
+                    </td>
+                    <td>@${member.username || 'user'}</td>
+                    <td>${joinDate}</td>
+                    <td>
+                        <span class="status ${isActive ? 'active' : 'inactive'}">
+                            ${isActive ? '✅ Active' : '⏳ Pending Investment'}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    async function renderActiveMembersCard() {
+        const container = document.getElementById('activeMembersCard');
+        if (!container) return;
+        
+        const activeMembers = allMembers.filter(m => m.hasInvested === true);
+        
+        if (activeMembers.length === 0) {
+            container.innerHTML = `
                 <div class="card-header">
                     <div class="card-title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1275,208 +1245,212 @@
                         </svg>
                         <span>Active Members Investment</span>
                     </div>
-                    <div class="badge">${activeMembers.length} Active</div>
                 </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Member</th>
-                                <th>Investment</th>
-                                <th>Daily Profit</th>
-                                <th>Your Commission</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>
+                    </svg>
+                    <p>No active members with investments yet</p>
+                    <p style="margin-top:10px;font-size:0.9rem">
+                        When your referrals invest, you'll earn 10% commission!
+                    </p>
+                </div>
             `;
+            return;
+        }
+        
+        let html = `
+            <div class="card-header">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>
+                    </svg>
+                    <span>Active Members Investment</span>
+                </div>
+                <div class="badge">${activeMembers.length} Active</div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Investment</th>
+                            <th>Your Commission (10%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        let totalInvested = 0;
+        
+        for (const member of activeMembers) {
+            let invested = member.totalInvested || 0;
             
-            let totalCommission = 0;
-            let totalInvested = 0;
-            
-            for (const member of activeMembers) {
-                let invested = member.totalInvested || 0;
-                let dailyProfit = member.totalProfit ? (member.totalProfit / 30) : 0;
-                let planName = 'Basic Plan';
-                
-                // Try to get investment details
+            if (invested === 0) {
                 try {
                     const investmentSnapshot = await db.collection('investments')
                         .where('userId', '==', member.id)
                         .where('status', '==', 'active')
-                        .limit(1)
                         .get();
                     
                     if (!investmentSnapshot.empty) {
-                        const investment = investmentSnapshot.docs[0].data();
-                        invested = investment.amount || invested;
-                        dailyProfit = investment.dailyProfit || dailyProfit;
-                        planName = investment.planName || planName;
+                        invested = investmentSnapshot.docs.reduce((sum, doc) => {
+                            return sum + (doc.data().amount || 0);
+                        }, 0);
                     }
                 } catch (error) {
                     console.error('Error fetching investment for member:', member.id, error);
                 }
-                
-                const commission = invested * 0.10; // 10% commission
-                const dailyCommission = dailyProfit * 0.10;
-                totalCommission += commission;
-                totalInvested += invested;
-                
-                html += `
-                    <tr>
-                        <td>
-                            <div><strong>${member.name || member.fullName || 'Anonymous'}</strong></div>
-                            <div style="font-size:0.85rem;color:var(--text-secondary)">@${member.username || 'user'}</div>
-                            <div style="font-size:0.8rem;color:var(--primary)">${planName}</div>
-                        </td>
-                        <td>
-                            <div><strong>PKR ${invested.toLocaleString()}</strong></div>
-                        </td>
-                        <td>
-                            <div style="color:var(--success);font-weight:600">PKR ${dailyProfit.toFixed(2)}</div>
-                            <div style="font-size:0.8rem;color:var(--text-secondary)">Daily</div>
-                        </td>
-                        <td>
-                            <div><strong style="color:var(--success)">PKR ${commission.toLocaleString()}</strong></div>
-                            <div style="font-size:0.85rem;color:var(--text-secondary)">
-                                Daily: <span style="color:var(--success)">PKR ${dailyCommission.toFixed(2)}</span>
-                            </div>
-                        </td>
-                    </tr>
-                `;
             }
+            
+            totalInvested += invested;
+            const commission = invested * 0.10;
+            const displayName = member.name || member.fullName || member.email || 'Anonymous';
             
             html += `
-                        </tbody>
-                    </table>
-                    <div style="padding:20px;background:rgba(0,255,136,0.1);border-radius:16px;margin-top:20px;border:1px solid rgba(0,255,136,0.3)">
-                        <div style="display:flex;justify-content:space-between;align-items:center">
-                            <div>
-                                <div style="font-size:0.9rem;color:var(--text-secondary)">Total Investment by Referrals</div>
-                                <div style="font-size:1.5rem;font-weight:800;color:var(--primary)">PKR ${totalInvested.toLocaleString()}</div>
-                            </div>
-                            <div style="text-align:right">
-                                <div style="font-size:0.9rem;color:var(--text-secondary)">Your Total Commission</div>
-                                <div style="font-size:1.8rem;font-weight:800;color:var(--success)">PKR ${totalCommission.toLocaleString()}</div>
-                            </div>
-                        </div>
+                <tr>
+                    <td>
+                        <div><strong>${displayName}</strong></div>
+                        <div style="font-size:0.85rem;color:var(--text-secondary)">@${member.username || 'user'}</div>
+                    </td>
+                    <td>
+                        <div><strong>PKR ${invested.toLocaleString()}</strong></div>
+                    </td>
+                    <td>
+                        <div><strong style="color:var(--success)">PKR ${commission.toLocaleString()}</strong></div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        const totalCommission = totalInvested * 0.10;
+        
+        html += `
+                </tbody>
+            </table>
+            <div style="padding:20px;background:rgba(0,255,136,0.1);border-radius:16px;margin-top:20px;border:1px solid rgba(0,255,136,0.3)">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                        <div style="font-size:0.9rem;color:var(--text-secondary)">Total Investment by Referrals</div>
+                        <div style="font-size:1.5rem;font-weight:800;color:var(--primary)">PKR ${totalInvested.toLocaleString()}</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-size:0.9rem;color:var(--text-secondary)">Your Total Commission</div>
+                        <div style="font-size:1.8rem;font-weight:800;color:var(--success)">PKR ${totalCommission.toLocaleString()}</div>
                     </div>
                 </div>
-            `;
-            
-            container.innerHTML = html;
-        }
+            </div>
+        </div>
+        `;
+        
+        container.innerHTML = html;
+    }
 
-        // ========== FILTER FUNCTIONS ==========
-        function filterMembers(status) {
-            currentFilter = status;
-            const tabs = document.querySelectorAll('#statusTabs .tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            
-            const clickedTab = Array.from(tabs).find(tab => 
-                tab.textContent.trim().toLowerCase() === status.toLowerCase()
-            );
-            if (clickedTab) {
-                clickedTab.classList.add('active');
-            }
-            
-            renderMembersTable();
+    function filterMembers(status) {
+        currentFilter = status;
+        const tabs = document.querySelectorAll('#statusTabs .tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        
+        const clickedTab = Array.from(tabs).find(tab => 
+            tab.textContent.trim().toLowerCase() === status.toLowerCase()
+        );
+        if (clickedTab) {
+            clickedTab.classList.add('active');
         }
+        
+        renderMembersTable();
+    }
 
-        function searchMembers(query) {
-            currentSearch = query;
-            renderMembersTable();
+    function searchMembers(query) {
+        currentSearch = query;
+        renderMembersTable();
+    }
+
+    function copyReferralCode() {
+        const code = document.getElementById('referralCode').textContent;
+        if (code === 'LOADING' || code === 'NOCODE') {
+            showToast('Please wait for referral code to load', 'warning');
+            return;
         }
+        
+        navigator.clipboard.writeText(code)
+            .then(() => showToast('Referral code copied!', 'success'))
+            .catch(err => {
+                const tempInput = document.createElement('input');
+                tempInput.value = code;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showToast('Referral code copied!', 'success');
+            });
+    }
 
-        // ========== UTILITY FUNCTIONS ==========
-        function copyReferralCode() {
-            const code = document.getElementById('referralCode').textContent;
-            if (code === 'LOADING' || code === 'NOCODE') {
-                showToast('Please wait for referral code to load', 'warning');
-                return;
-            }
-            
-            navigator.clipboard.writeText(code)
-                .then(() => showToast('Referral code copied!', 'success'))
-                .catch(err => {
-                    const tempInput = document.createElement('input');
-                    tempInput.value = code;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempInput);
-                    showToast('Referral code copied!', 'success');
-                });
+    function shareReferral() {
+        const link = document.getElementById('referralLink').value;
+        const code = document.getElementById('referralCode').textContent;
+        
+        if (code === 'LOADING' || code === 'NOCODE') {
+            showToast('Please wait for referral code to load', 'warning');
+            return;
         }
-
-        function shareReferral() {
-            const link = document.getElementById('referralLink').value;
-            const code = document.getElementById('referralCode').textContent;
-            
-            if (code === 'LOADING' || code === 'NOCODE') {
-                showToast('Please wait for referral code to load', 'warning');
-                return;
-            }
-            
-            // FIXED: Better share message with clear instructions
-            const text = `🚀 Join InviteGain and start earning daily profits!\n\n` +
-                        `💰 Use my referral code: ${code}\n` +
-                        `🔗 Or click this link: ${link}\n\n` +
-                        `✨ You'll get 100 PKR welcome bonus when you sign up with my code!`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'InviteGain Referral',
-                    text: text,
-                    url: link
-                }).catch(() => {
-                    // Fallback if share is canceled
-                    navigator.clipboard.writeText(text)
-                        .then(() => showToast('Referral info copied to clipboard!', 'success'));
-                });
-            } else {
+        
+        const text = `🚀 Join InviteGain and start earning daily profits!\n\n` +
+                    `💰 Use my referral code: ${code}\n` +
+                    `🔗 Click this link: ${link}\n\n` +
+                    `✨ You'll get 100 PKR welcome bonus when you sign up with my code!`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'InviteGain Referral',
+                text: text,
+                url: link
+            }).catch(() => {
                 navigator.clipboard.writeText(text)
-                    .then(() => showToast('Referral info copied to clipboard!', 'success'))
-                    .catch(() => showToast('Please copy the link manually', 'warning'));
-            }
+                    .then(() => showToast('Referral info copied to clipboard!', 'success'));
+            });
+        } else {
+            navigator.clipboard.writeText(text)
+                .then(() => showToast('Referral info copied to clipboard!', 'success'))
+                .catch(() => showToast('Please copy the link manually', 'warning'));
         }
+    }
 
-        function showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.textContent = message;
-            
-            toastContainer.appendChild(toast);
-            
-            setTimeout(() => toast.classList.add('show'), 10);
-            
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        
+        toastContainer.appendChild(toast);
+        
+        setTimeout(() => toast.classList.add('show'), 10);
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
             setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            }, 3000);
-        }
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
+    }
 
-        // Clean up listeners
-        window.addEventListener('beforeunload', () => {
+    window.addEventListener('beforeunload', () => {
+        if (unsubscribeMembers) unsubscribeMembers();
+        if (unsubscribeStats) unsubscribeStats();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
             if (unsubscribeMembers) unsubscribeMembers();
             if (unsubscribeStats) unsubscribeStats();
-        });
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') {
-                if (unsubscribeMembers) unsubscribeMembers();
-                if (unsubscribeStats) unsubscribeStats();
-            } else if (document.visibilityState === 'visible') {
-                // Re-establish listeners
-                if (currentUser) {
-                    setupRealtimeListeners(currentUser.uid);
-                }
+        } else if (document.visibilityState === 'visible') {
+            if (currentUser && currentUserReferralCode) {
+                setupRealtimeListeners(currentUser.uid);
             }
-        });
-    </script>
+        }
+    });
+</script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </body>
