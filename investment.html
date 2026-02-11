@@ -819,6 +819,42 @@
             margin-top: 5px;
             text-align: center;
         }
+
+        .plan-limit-reached {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .daily-task-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: rgba(255, 170, 0, 0.1);
+            border-radius: 20px;
+            color: var(--warning);
+            font-size: 0.85rem;
+        }
+
+        .task-completed {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--success);
+        }
+
+        .plan-limit-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
     </style>
     <!-- Chart.js for graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -881,6 +917,12 @@
                 <button class="timeframe-btn" onclick="changeTimeframe('7D')">7D</button>
                 <button class="timeframe-btn" onclick="changeTimeframe('30D')">30D</button>
             </div>
+        </div>
+
+        <!-- Plan Limit Warning -->
+        <div class="plan-limit-reached" id="planLimitWarning" style="display: none;">
+            <strong>Investment Limit Reached!</strong>
+            <p>You can only have 3 active plans at a time. Complete existing plans to invest in new ones.</p>
         </div>
 
         <!-- Plans Section -->
@@ -972,6 +1014,10 @@
                 <span id="summaryDaily">0 PKR</span>
             </div>
             <div class="summary-item">
+                <span>Duration</span>
+                <span id="summaryDuration">15 days</span>
+            </div>
+            <div class="summary-item">
                 <span>Total Profit</span>
                 <span id="summaryTotal">0 PKR</span>
             </div>
@@ -982,6 +1028,10 @@
             <div class="summary-item">
                 <span>Total Return</span>
                 <span id="summaryReturn" style="color: var(--success); font-weight: 600;">0 PKR</span>
+            </div>
+            <div class="summary-item">
+                <span>Daily Task Required</span>
+                <span style="color: var(--warning);">Yes (Check Dashboard)</span>
             </div>
 
             <button class="btn btn-primary" onclick="confirmInvestment()" style="margin-top: 25px; width: 100%;" id="confirmBtn">
@@ -1071,6 +1121,11 @@
         let priceUpdateInterval = null;
         let walletListener = null;
         let investmentsListener = null;
+        let activeInvestmentCount = 0;
+
+        // Constants
+        const MAX_ACTIVE_PLANS = 3;
+        const INVESTMENT_DURATION_DAYS = 15;
 
         // DOM Elements
         const assetSelector = document.getElementById('assetSelector');
@@ -1082,8 +1137,9 @@
         const toastContainer = document.querySelector('.toast-container');
         const investModal = document.getElementById('investModal');
         const investmentCount = document.getElementById('investmentCount');
+        const planLimitWarning = document.getElementById('planLimitWarning');
 
-        // Asset Plans Configuration
+        // Asset Plans Configuration (15 days duration)
         const ASSET_PLANS = {
             'BTC': [
                 { amount: 1500, dailyPercent: 30, name: 'BTC Plan 1' },
@@ -1107,7 +1163,7 @@
             ]
         };
 
-        // Initialize App with better error handling
+        // Initialize App
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 console.log('Initializing app...');
@@ -1120,13 +1176,17 @@
                 initAssets();
                 console.log('Assets initialized');
                 
+                // Load active investments count FIRST
+                await checkActiveInvestmentsCount();
+                
+                // Update plans based on limit
                 updatePlansForAsset();
                 console.log('Plans updated');
                 
                 initChart();
                 console.log('Chart initialized');
                 
-                // Set up real-time wallet listener FIRST
+                // Set up real-time wallet listener
                 setupWalletListener();
                 console.log('Wallet listener setup');
                 
@@ -1161,13 +1221,40 @@
                         console.log('User logged in:', user.email);
                         resolve(user);
                     } else {
-                        // Redirect to login if not authenticated
                         console.log('No user, redirecting to login...');
                         window.location.href = 'index.html';
                         reject(new Error('User not authenticated'));
                     }
                 });
             });
+        }
+
+        // Check active investments count
+        async function checkActiveInvestmentsCount() {
+            if (!currentUser) return 0;
+            
+            try {
+                const snapshot = await db.collection('investments')
+                    .where('userId', '==', currentUser.uid)
+                    .where('status', '==', 'running')
+                    .get();
+                
+                activeInvestmentCount = snapshot.size;
+                
+                // Show/hide plan limit warning
+                if (activeInvestmentCount >= MAX_ACTIVE_PLANS) {
+                    planLimitWarning.style.display = 'block';
+                } else {
+                    planLimitWarning.style.display = 'none';
+                }
+                
+                console.log(`Active investments: ${activeInvestmentCount}/${MAX_ACTIVE_PLANS}`);
+                
+                return activeInvestmentCount;
+            } catch (error) {
+                console.error('Error checking active investments:', error);
+                return 0;
+            }
         }
 
         // Asset Functions
@@ -1221,15 +1308,26 @@
             
             plans.forEach((plan, index) => {
                 const dailyProfit = (plan.amount * plan.dailyPercent / 100).toFixed(2);
-                const totalProfit = (dailyProfit * 30).toFixed(2);
+                const totalProfit = (dailyProfit * INVESTMENT_DURATION_DAYS).toFixed(2);
                 const totalReturn = (parseFloat(totalProfit) + plan.amount).toFixed(2);
                 
-                // Use the REAL-TIME userWalletBalance
-                const isDisabled = userWalletBalance < plan.amount;
+                // Check if user can invest (balance and limit)
+                const hasSufficientBalance = userWalletBalance >= plan.amount;
+                const canInvestMore = activeInvestmentCount < MAX_ACTIVE_PLANS;
+                const isDisabled = !hasSufficientBalance || !canInvestMore;
                 
                 const card = document.createElement('div');
                 card.className = 'plan-card';
+                
+                let disabledReason = '';
+                if (!canInvestMore) {
+                    disabledReason = `Plan limit reached (${MAX_ACTIVE_PLANS} max)`;
+                } else if (!hasSufficientBalance) {
+                    disabledReason = `Need ${(plan.amount - userWalletBalance).toLocaleString()} PKR more`;
+                }
+                
                 card.innerHTML = `
+                    ${!canInvestMore ? '<div class="plan-limit-badge">LIMIT REACHED</div>' : ''}
                     <div class="plan-header">
                         <div class="plan-name">${plan.name}</div>
                         <div class="plan-badge">${plan.dailyPercent}% Daily</div>
@@ -1248,8 +1346,16 @@
                             <span class="detail-value profit-value">${dailyProfit} PKR</span>
                         </div>
                         <div class="detail-item">
+                            <span class="detail-label">Duration</span>
+                            <span class="detail-value">${INVESTMENT_DURATION_DAYS} days</span>
+                        </div>
+                        <div class="detail-item">
                             <span class="detail-label">Principal Refund</span>
                             <span class="detail-value" style="color: var(--success);">Yes</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Daily Task</span>
+                            <span class="detail-value" style="color: var(--warning);">Required</span>
                         </div>
                     </div>
                     <div class="plan-actions">
@@ -1259,20 +1365,18 @@
                             Invest Now
                         </button>
                     </div>
-                    ${isDisabled ? `<div class="btn-disabled-text">Need ${(plan.amount - userWalletBalance).toLocaleString()} PKR more</div>` : ''}
+                    ${isDisabled ? `<div class="btn-disabled-text">${disabledReason}</div>` : ''}
                 `;
                 plansGrid.appendChild(card);
             });
         }
 
-        // Chart Functions
+        // Chart Functions (unchanged)
         function initChart() {
             const ctx = document.getElementById('marketChart').getContext('2d');
             
-            // Generate smoother initial data
             const initialData = generateSmoothChartData(50, selectedAsset.price);
             
-            // Create chart with improved styling
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1454,44 +1558,36 @@
                             updateWalletUI();
                             updatePlansForAsset();
                             
-                    } else {
-  const generatedCode = "UMA" + Math.floor(1000 + Math.random() * 9000);
-
-  db.collection("users").doc(currentUser.uid).set({
-    uid: currentUser.uid,
-    email: currentUser.email,
-
-    // profile fields (empty but exist)
-    fullName: "",
-    username: "",
-    phone: "",
-
-    // referral system
-    referralCode: generatedCode,
-    referredBy: null,
-    referralEarnings: 0,
-    totalReferrals: 0,
-    activeReferrals: 0,
-
-    // wallet fields
-    balance: 0,
-    accountBalance: 0,
-    pendingWithdraw: 0,
-
-    // investment fields
-    totalInvested: 0,
-    totalProfit: 0,
-    activeInvestments: 0,
-
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true }).then(() => {
-    userWalletBalance = 0;
-    updateWalletUI();
-    updatePlansForAsset();
-  });
-}
-
+                        } else {
+                            const generatedCode = "UMA" + Math.floor(1000 + Math.random() * 9000);
+                            
+                            db.collection("users").doc(currentUser.uid).set({
+                                uid: currentUser.uid,
+                                email: currentUser.email,
+                                fullName: "",
+                                username: "",
+                                phone: "",
+                                referralCode: generatedCode,
+                                referredBy: null,
+                                referralEarnings: 0,
+                                totalReferrals: 0,
+                                activeReferrals: 0,
+                                balance: 0,
+                                accountBalance: 0,
+                                pendingWithdraw: 0,
+                                totalInvested: 0,
+                                totalProfit: 0,
+                                activeInvestments: 0,
+                                dailyTaskCompleted: false,
+                                lastTaskDate: null,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }, { merge: true }).then(() => {
+                                userWalletBalance = 0;
+                                updateWalletUI();
+                                updatePlansForAsset();
+                            });
+                        }
                     }, (error) => {
                         console.error('Wallet listener error:', error);
                         showToast('Failed to load wallet balance', 'error');
@@ -1510,9 +1606,9 @@
                 walletAmount.classList.add('balance-updating');
                 const userDoc = await db.collection('users').doc(currentUser.uid).get();
                 if (userDoc.exists) {
-                 const data = userDoc.data();
-userWalletBalance = data.balance || data.accountBalance || 0;
-
+                    const data = userDoc.data();
+                    userWalletBalance = data.balance || data.accountBalance || 0;
+                    
                     updateWalletUI();
                     updatePlansForAsset();
                     showToast('Balance refreshed!', 'success');
@@ -1580,17 +1676,19 @@ userWalletBalance = data.balance || data.accountBalance || 0;
                 const now = new Date();
                 const startDate = investment.createdAt?.toDate ? investment.createdAt.toDate() : new Date(investment.createdAt);
                 const daysPassed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
-                const daysLeft = Math.max(0, 30 - daysPassed);
-                const progress = Math.min(100, (daysPassed / 30) * 100);
+                const daysLeft = Math.max(0, INVESTMENT_DURATION_DAYS - daysPassed);
+                const progress = Math.min(100, (daysPassed / INVESTMENT_DURATION_DAYS) * 100);
                 
                 const dailyProfit = investment.dailyProfit || (investment.planAmount * investment.dailyPercent / 100);
-                const earnedProfit = (investment.earnedProfit || 0) + (dailyProfit * daysPassed);
-                const totalReturn = investment.totalReturn || (earnedProfit + investment.planAmount);
+                const earnedProfit = investment.earnedProfit || 0;
+                const totalProfit = dailyProfit * INVESTMENT_DURATION_DAYS;
+                const totalReturn = totalProfit + investment.planAmount;
                 
-                const nextPayout = new Date(startDate);
-                nextPayout.setDate(nextPayout.getDate() + daysPassed + 1);
-                const timeToNextPayout = nextPayout - now;
-                const hoursToPayout = Math.max(0, Math.floor(timeToNextPayout / (1000 * 60 * 60)));
+                // Check if daily task is completed for today
+                const taskCompleted = investment.todayTaskCompleted || false;
+                const today = new Date().toDateString();
+                const lastTaskDate = investment.lastTaskDate ? new Date(investment.lastTaskDate).toDateString() : null;
+                const isTaskCompletedToday = taskCompleted && lastTaskDate === today;
                 
                 const card = document.createElement('div');
                 card.className = 'investment-card';
@@ -1623,8 +1721,10 @@ userWalletBalance = data.balance || data.accountBalance || 0;
                             <span class="detail-value profit-value">${earnedProfit.toFixed(2)} PKR</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Next Payout</span>
-                            <span class="detail-value">${hoursToPayout}h</span>
+                            <span class="detail-label">Daily Task</span>
+                            <span class="daily-task-indicator ${isTaskCompletedToday ? 'task-completed' : ''}">
+                                ${isTaskCompletedToday ? '✓ Completed' : '⚠ Required'}
+                            </span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Total Return</span>
@@ -1636,14 +1736,14 @@ userWalletBalance = data.balance || data.accountBalance || 0;
                             <div class="progress-fill" style="width: ${progress}%"></div>
                         </div>
                         <div class="progress-text">
-                            <span>Day ${daysPassed} of 30 (${daysLeft} left)</span>
+                            <span>Day ${daysPassed} of ${INVESTMENT_DURATION_DAYS} (${daysLeft} left)</span>
                             <span>${progress.toFixed(1)}%</span>
                         </div>
                     </div>
                     <div class="investment-actions">
                         <button class="btn btn-secondary" onclick="showInvestmentDetails('${investment.id}')">Details</button>
-                        <button class="btn btn-primary" onclick="withdrawProfit('${investment.id}')" ${earnedProfit < 1 ? 'disabled' : ''}>
-                            Withdraw Profit (${earnedProfit.toFixed(2)} PKR)
+                        <button class="btn btn-primary" onclick="completeDailyTask('${investment.id}')" ${isTaskCompletedToday ? 'disabled' : ''}>
+                            ${isTaskCompletedToday ? 'Task Completed' : 'Complete Daily Task'}
                         </button>
                     </div>
                 `;
@@ -1652,7 +1752,66 @@ userWalletBalance = data.balance || data.accountBalance || 0;
         }
 
         function updateInvestmentCount(count) {
-            investmentCount.textContent = `(${count})`;
+            investmentCount.textContent = `(${count}/${MAX_ACTIVE_PLANS})`;
+        }
+
+        async function completeDailyTask(investmentId) {
+            try {
+                // Check if user has completed daily task in dashboard
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (!userDoc.exists) {
+                    showToast('User not found', 'error');
+                    return;
+                }
+                
+                const userData = userDoc.data();
+                const today = new Date().toDateString();
+                const lastTaskDate = userData.lastTaskDate ? new Date(userData.lastTaskDate).toDateString() : null;
+                
+                if (lastTaskDate === today && userData.dailyTaskCompleted) {
+                    // Update investment with today's task completion
+                    const investmentRef = db.collection('investments').doc(investmentId);
+                    
+                    await db.runTransaction(async (transaction) => {
+                        const investmentDoc = await transaction.get(investmentRef);
+                        if (!investmentDoc.exists) {
+                            throw new Error('Investment not found');
+                        }
+                        
+                        const investment = investmentDoc.data();
+                        const today = new Date().toISOString().split('T')[0];
+                        const lastTaskDate = investment.lastTaskDate ? new Date(investment.lastTaskDate).toISOString().split('T')[0] : null;
+                        
+                        // Only add profit if task wasn't completed today
+                        if (lastTaskDate !== today) {
+                            const dailyProfit = investment.dailyProfit;
+                            const newEarnedProfit = (investment.earnedProfit || 0) + dailyProfit;
+                            
+                            transaction.update(investmentRef, {
+                                earnedProfit: newEarnedProfit,
+                                lastTaskDate: new Date().toISOString(),
+                                todayTaskCompleted: true,
+                                lastProfitDate: new Date().toISOString(),
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            
+                            showToast(`Daily task completed! ${dailyProfit.toFixed(2)} PKR added to your profit.`, 'success');
+                        } else {
+                            showToast('Daily task already completed today', 'info');
+                        }
+                    });
+                    
+                    // Refresh investments display
+                    loadInvestments();
+                    
+                } else {
+                    showToast('Please complete daily task in Dashboard first!', 'warning');
+                }
+                
+            } catch (error) {
+                console.error('Error completing daily task:', error);
+                showToast('Failed to complete daily task', 'error');
+            }
         }
 
         function scrollToPlans() {
@@ -1663,44 +1822,13 @@ userWalletBalance = data.balance || data.accountBalance || 0;
             showToast('Investment details will be shown here', 'info');
         }
 
-        async function withdrawProfit(investmentId) {
-            try {
-                showToast('Processing profit withdrawal...', 'info');
-                
-                // Get investment
-                const investmentRef = db.collection('investments').doc(investmentId);
-                const investmentDoc = await investmentRef.get();
-                
-                if (!investmentDoc.exists) {
-                    showToast('Investment not found', 'error');
-                    return;
-                }
-                
-                const investment = investmentDoc.data();
-                
-                // Update user balance
-                await db.collection('users').doc(currentUser.uid).update({
-                    balance: firebase.firestore.FieldValue.increment(investment.earnedProfit || 0),
-                    totalProfit: firebase.firestore.FieldValue.increment(investment.earnedProfit || 0),
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                // Mark profit as withdrawn
-                await investmentRef.update({
-                    earnedProfit: 0,
-                    lastWithdrawal: new Date().toISOString()
-                });
-                
-                showToast(`Profit of ${(investment.earnedProfit || 0).toFixed(2)} PKR withdrawn successfully!`, 'success');
-                refreshWalletBalance();
-                
-            } catch (error) {
-                console.error('Withdrawal error:', error);
-                showToast('Failed to withdraw profit', 'error');
-            }
-        }
-
         function openInvestModal(assetSymbol, planIndex) {
+            // Check investment limit
+            if (activeInvestmentCount >= MAX_ACTIVE_PLANS) {
+                showToast(`You can only have ${MAX_ACTIVE_PLANS} active plans at a time`, 'error');
+                return;
+            }
+            
             const plans = ASSET_PLANS[assetSymbol];
             if (!plans || !plans[planIndex] || !selectedAsset) {
                 showToast('Invalid plan selection', 'error');
@@ -1710,12 +1838,13 @@ userWalletBalance = data.balance || data.accountBalance || 0;
             selectedPlan = plans[planIndex];
             
             const dailyProfit = (selectedPlan.amount * selectedPlan.dailyPercent / 100).toFixed(2);
-            const totalProfit = (dailyProfit * 30).toFixed(2);
+            const totalProfit = (dailyProfit * INVESTMENT_DURATION_DAYS).toFixed(2);
             const totalReturn = (parseFloat(totalProfit) + selectedPlan.amount).toFixed(2);
             
             document.getElementById('modalAsset').value = selectedAsset.name;
             document.getElementById('modalPlan').value = selectedPlan.name;
             document.getElementById('modalAmount').value = selectedPlan.amount.toLocaleString() + ' PKR';
+            document.getElementById('summaryDuration').textContent = `${INVESTMENT_DURATION_DAYS} days`;
             
             document.getElementById('modalWalletBalance').textContent = `${userWalletBalance.toLocaleString()} PKR`;
             document.getElementById('summaryDailyPercent').textContent = `${selectedPlan.dailyPercent}%`;
@@ -1762,6 +1891,13 @@ userWalletBalance = data.balance || data.accountBalance || 0;
                 return;
             }
             
+            // Check investment limit again
+            if (activeInvestmentCount >= MAX_ACTIVE_PLANS) {
+                showToast(`You can only have ${MAX_ACTIVE_PLANS} active plans at a time`, 'error');
+                closeModal();
+                return;
+            }
+            
             if (userWalletBalance < selectedPlan.amount) {
                 showToast('Insufficient balance! Please refresh.', 'error');
                 document.getElementById('insufficientBalance').style.display = 'block';
@@ -1776,7 +1912,7 @@ userWalletBalance = data.balance || data.accountBalance || 0;
             
             try {
                 const dailyProfit = selectedPlan.amount * selectedPlan.dailyPercent / 100;
-                const totalProfit = dailyProfit * 30;
+                const totalProfit = dailyProfit * INVESTMENT_DURATION_DAYS;
                 const totalReturn = totalProfit + selectedPlan.amount;
                 
                 const investmentData = {
@@ -1792,13 +1928,15 @@ userWalletBalance = data.balance || data.accountBalance || 0;
                     totalReturn: totalReturn,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     status: "running",
-                    durationDays: 30,
+                    durationDays: INVESTMENT_DURATION_DAYS,
                     principalRefund: true,
                     lastProfitDate: null,
                     earnedProfit: 0,
-                    remainingDays: 30,
+                    remainingDays: INVESTMENT_DURATION_DAYS,
                     isActive: true,
-                    startDate: new Date().toISOString()
+                    startDate: new Date().toISOString(),
+                    todayTaskCompleted: false,
+                    lastTaskDate: null
                 };
                 
                 await db.runTransaction(async (transaction) => {
@@ -1809,21 +1947,30 @@ userWalletBalance = data.balance || data.accountBalance || 0;
                         throw new Error("User document not found");
                     }
                     
-                let currentBalance = (userDoc.data().balance || 0) + (userDoc.data().accountBalance || 0);
-
-if (currentBalance < selectedPlan.amount) {
-    throw new Error("Insufficient balance");
-}
-
-// Deduct from balance first, then accountBalance
-let deductFromBalance = Math.min(userDoc.data().balance || 0, selectedPlan.amount);
-let deductFromAccount = selectedPlan.amount - deductFromBalance;
-
-transaction.update(userRef, {
-    balance: (userDoc.data().balance || 0) - deductFromBalance,
-    accountBalance: (userDoc.data().accountBalance || 0) - deductFromAccount
-});
-
+                    let currentBalance = (userDoc.data().balance || 0) + (userDoc.data().accountBalance || 0);
+                    
+                    if (currentBalance < selectedPlan.amount) {
+                        throw new Error("Insufficient balance");
+                    }
+                    
+                    // Check active investments count
+                    const investmentsSnapshot = await db.collection('investments')
+                        .where('userId', '==', currentUser.uid)
+                        .where('status', '==', 'running')
+                        .get();
+                    
+                    if (investmentsSnapshot.size >= MAX_ACTIVE_PLANS) {
+                        throw new Error(`Maximum ${MAX_ACTIVE_PLANS} active plans allowed`);
+                    }
+                    
+                    // Deduct from balance
+                    let deductFromBalance = Math.min(userDoc.data().balance || 0, selectedPlan.amount);
+                    let deductFromAccount = selectedPlan.amount - deductFromBalance;
+                    
+                    transaction.update(userRef, {
+                        balance: (userDoc.data().balance || 0) - deductFromBalance,
+                        accountBalance: (userDoc.data().accountBalance || 0) - deductFromAccount
+                    });
                     
                     const newBalance = currentBalance - selectedPlan.amount;
                     
@@ -1843,6 +1990,7 @@ transaction.update(userRef, {
                     });
                     
                     userWalletBalance = newBalance;
+                    activeInvestmentCount = investmentsSnapshot.size + 1;
                     
                     return {
                         investmentId: investmentRef.id,
@@ -1853,15 +2001,21 @@ transaction.update(userRef, {
                 closeModal();
                 showToast(`Investment of ${selectedPlan.amount.toLocaleString()} PKR successful!`, 'success');
                 
+                // Update UI
                 updateWalletUI();
+                await checkActiveInvestmentsCount();
                 updatePlansForAsset();
+                await loadInvestments();
                 
             } catch (error) {
                 console.error('Investment error:', error);
                 
                 await refreshWalletBalance();
+                await checkActiveInvestmentsCount();
                 
-                if (error.message === "Insufficient balance") {
+                if (error.message.includes("Maximum") || error.message.includes("limit")) {
+                    showToast(error.message, 'error');
+                } else if (error.message === "Insufficient balance") {
                     showToast('Insufficient balance. Please refresh and try again.', 'error');
                 } else {
                     showToast('Investment failed. Please try again.', 'error');
@@ -1881,7 +2035,7 @@ transaction.update(userRef, {
             
             document.getElementById('calcPlanName').value = plan.name;
             document.getElementById('calcDailyPercent').value = `${plan.dailyPercent}%`;
-            document.getElementById('calcDuration').value = `30 days`;
+            document.getElementById('calcDuration').value = `${INVESTMENT_DURATION_DAYS} days`;
             document.getElementById('calcAmount').value = plan.amount;
             
             calculateProfitForModal(plan, plan.amount);
@@ -1918,7 +2072,7 @@ transaction.update(userRef, {
 
         function calculateProfitForModal(plan, amount) {
             const dailyProfit = amount * plan.dailyPercent / 100;
-            const totalProfit = dailyProfit * 30;
+            const totalProfit = dailyProfit * INVESTMENT_DURATION_DAYS;
             const totalReturn = totalProfit + amount;
             
             document.getElementById('calcDailyProfit').textContent = `${dailyProfit.toFixed(2)} PKR`;
@@ -2004,18 +2158,7 @@ transaction.update(userRef, {
         });
 
         window.addEventListener('beforeunload', () => {
-            if (walletListener) {
-                walletListener();
-                walletListener = null;
-            }
-            if (investmentsListener) {
-                investmentsListener();
-                investmentsListener = null;
-            }
-            if (priceUpdateInterval) {
-                clearInterval(priceUpdateInterval);
-                priceUpdateInterval = null;
-            }
+            cleanupListeners();
         });
 
         function cleanupListeners() {

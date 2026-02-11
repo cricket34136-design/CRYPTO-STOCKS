@@ -958,7 +958,7 @@
     <div class="container">
         <!-- Hero Section -->
         <section class="hero">
-            <h1 class="brand-logo">CRYPTO STOCKS</h1>
+            <h1 class="brand-logo">INVITEGAIN</h1>
             <p class="tagline">
                 Join our premium investment platform and start earning daily profits. 
                 Secure, transparent, and backed by a thriving referral community.
@@ -1134,7 +1134,7 @@
                             </div>
                         </div>
                         
-                        <!-- Referral Code Input -->
+                        <!-- Referral Code Input - FIXED: Auto-detects from URL -->
                         <div class="form-group">
                             <div class="referral-input-group">
                                 <label for="referralCode">Referral Code (Optional)</label>
@@ -1228,11 +1228,42 @@
 
         // Global Variables for Referral System
         let activeTab = 'login';
-        let referralData = null; // Stores referrer data
-        let referrerId = null; // Stores referrer UID
+        let referralData = null;
+        let referrerId = null;
         let referralUsers = [];
         let referralValidationInProgress = false;
-        let referralAlreadyProcessed = false; // Prevents duplicate processing
+        let referralAlreadyProcessed = false;
+
+        // ========== URL REFERRAL DETECTION - FIXED ==========
+        // This function runs on page load to check for ref=CODE in URL
+        function detectReferralFromURL() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const refCode = urlParams.get('ref');
+                
+                if (refCode && refCode.trim() !== '') {
+                    console.log('🎯 Referral code detected from URL:', refCode);
+                    
+                    // Auto-switch to register tab
+                    if (activeTab !== 'register') {
+                        switchTab('register');
+                    }
+                    
+                    // Set the referral code input value
+                    referralCodeInput.value = refCode.trim().toUpperCase();
+                    
+                    // Auto-validate the referral code
+                    setTimeout(() => {
+                        checkReferralCode(refCode.trim().toUpperCase());
+                    }, 500);
+                    
+                    return true;
+                }
+            } catch (error) {
+                console.error('Error detecting referral from URL:', error);
+            }
+            return false;
+        }
 
         // Initialize application
         function init() {
@@ -1254,6 +1285,9 @@
             });
 
             initializeReferralValidation();
+            
+            // ========== FIX: Detect referral from URL on page load ==========
+            detectReferralFromURL();
         }
 
         // Tab switching
@@ -1588,13 +1622,13 @@
                     
                     showReferralInfo(referralData, referralUsers.length);
                     clearError('referralCode');
-                    showSuccess('referralCode', 'Valid referral code! You will receive a bonus.');
+                    showSuccess('referralCode', '✅ Valid referral code! You will receive 100 PKR bonus.');
                 } else {
                     console.log('❌ No referral found for code:', code);
                     referralData = null;
                     referrerId = null;
                     referralUsers = [];
-                    showError('referralCode', 'Invalid referral code');
+                    showError('referralCode', '❌ Invalid referral code');
                     hideReferralInfo();
                 }
             } catch (error) {
@@ -1631,7 +1665,7 @@
             document.getElementById('referrerName').textContent = `${referrer.fullName || 'User'}'s Team`;
             document.getElementById('referrerDetails').innerHTML = `
                 You're joining under <strong>${referrer.fullName || 'User'}</strong> (@${referrer.username || 'user'}). 
-                Get bonus rewards on successful registration!
+                You will receive 100 PKR welcome bonus!
             `;
             
             document.getElementById('totalReferrals').textContent = referralCount;
@@ -1701,9 +1735,6 @@
         async function createReferralRecord(referrerId, referredUserId, referralCode) {
             try {
                 console.log('📝 Creating referral record...');
-                console.log('- Referrer ID:', referrerId);
-                console.log('- Referred User ID:', referredUserId);
-                console.log('- Referral Code:', referralCode);
                 
                 const referralRecord = {
                     referrerId: referrerId,
@@ -1756,7 +1787,7 @@
             }
         }
 
-        // Main Registration Handler with FIXED REFERRAL SYSTEM
+        // ========== FIXED REGISTRATION HANDLER ==========
         async function handleRegisterSubmit(event) {
             event.preventDefault();
             console.log('=== REGISTRATION STARTED ===');
@@ -1782,42 +1813,34 @@
             };
             
             console.log('📋 Form Data:', formData);
-            console.log('🔑 Referral Code Input:', formData.referralCodeInput);
-            console.log('🎯 Referrer ID from validation:', referrerId);
-            console.log('📊 Referral Data:', referralData);
             
             setLoading(registerBtn, true);
             referralAlreadyProcessed = true;
             
             try {
-                // STEP 1: Validate if referral code is still valid (double-check)
+                // STEP 1: Validate referral code if provided
                 let validReferralCode = null;
                 let finalReferrerId = null;
                 let userBonus = 50; // Default bonus without referral
                 
-                if (formData.referralCodeInput && formData.referralCodeInput.length >= 3 && referrerId) {
-                    console.log('🔍 Double-checking referral code:', formData.referralCodeInput);
+                if (formData.referralCodeInput && formData.referralCodeInput.length >= 3) {
+                    console.log('🔍 Validating referral code:', formData.referralCodeInput);
                     
-                    const doubleCheck = await db.collection('users')
+                    const referralQuery = await db.collection('users')
                         .where('referralCode', '==', formData.referralCodeInput)
                         .limit(1)
                         .get();
                     
-                    if (!doubleCheck.empty) {
-                        const referrerDoc = doubleCheck.docs[0];
-                        if (referrerDoc.id === referrerId) {
-                            validReferralCode = formData.referralCodeInput;
-                            finalReferrerId = referrerId;
-                            userBonus = 100; // Bonus with valid referral
-                            console.log('✅ Referral code confirmed valid!');
-                        }
+                    if (!referralQuery.empty) {
+                        const referrerDoc = referralQuery.docs[0];
+                        finalReferrerId = referrerDoc.id;
+                        validReferralCode = formData.referralCodeInput;
+                        userBonus = 100; // Bonus with valid referral
+                        console.log('✅ Referral code is valid!');
+                    } else {
+                        console.log('❌ Invalid referral code');
                     }
                 }
-                
-                console.log('📊 Final referral decision:');
-                console.log('- Valid Referral Code:', validReferralCode);
-                console.log('- Referrer ID:', finalReferrerId);
-                console.log('- User Bonus:', userBonus);
                 
                 // STEP 2: Create Firebase Auth user
                 console.log('👤 Creating Firebase user...');
@@ -1833,7 +1856,7 @@
                 const userReferralCode = await generateUniqueReferralCode(formData.username);
                 console.log('🎫 Generated user referral code:', userReferralCode);
                 
-                // STEP 4: Prepare user data - CRITICAL: Set referredBy field properly
+                // STEP 4: Prepare user data - FIXED: Always set referredBy properly
                 const userData = {
                     uid: user.uid,
                     fullName: formData.fullName,
@@ -1843,10 +1866,11 @@
                     phone: formData.phone,
                     referralCode: userReferralCode,
                     
-                    // 🔥 FIXED: Always set referredBy field, never null
+                    // 🔥 CRITICAL FIX: Store referral information consistently
                     referredBy: validReferralCode ? validReferralCode : "NO_REFERRAL",
                     referredByUid: finalReferrerId ? finalReferrerId : null,
-                    referralCodeUsed: validReferralCode ? true : false,
+                    referralCodeUsed: validReferralCode ? validReferralCode : null,
+                    hasValidReferral: validReferralCode ? true : false,
                     
                     accountBalance: userBonus,
                     balance: userBonus,
@@ -1869,9 +1893,7 @@
                 };
                 
                 console.log('💾 Saving user to Firestore...');
-                console.log('🔥 referredBy field:', userData.referredBy);
-                console.log('🔥 referredByUid field:', userData.referredByUid);
-                console.log('🔥 referralCodeUsed field:', userData.referralCodeUsed);
+                console.log('🔗 referredBy:', userData.referredBy);
                 
                 // STEP 5: Save user to Firestore
                 await db.collection('users').doc(user.uid).set(userData);
@@ -1879,7 +1901,7 @@
                 
                 // STEP 6: Process referral if valid
                 if (validReferralCode && finalReferrerId) {
-                    console.log('🎯 Processing referral...');
+                    console.log('🎯 Processing referral for code:', validReferralCode);
                     
                     try {
                         // 6a: Create referral tracking record
@@ -1890,7 +1912,7 @@
                         
                         console.log('✅ Referral processing completed');
                     } catch (error) {
-                        console.error('⚠️ Referral processing had issues, but user created:', error);
+                        console.error('⚠️ Referral processing had issues:', error);
                         // Continue even if referral processing has issues
                     }
                 }
@@ -1902,8 +1924,8 @@
                     amount: userBonus,
                     status: 'completed',
                     description: validReferralCode ? 
-                        `Welcome bonus with referral code ${validReferralCode}` : 
-                        'Welcome bonus for new account',
+                        `🎁 Welcome bonus +100 PKR (Referred by code: ${validReferralCode})` : 
+                        '🎁 Welcome bonus 50 PKR',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -1921,15 +1943,11 @@
                 
                 // STEP 9: Show success message
                 const successMsg = validReferralCode ? 
-                    `🎉 Account created successfully! You received 100 PKR bonus using referral code ${validReferralCode}` :
-                    `🎉 Account created successfully! You received 50 PKR welcome bonus`;
+                    `🎉 Account created! +100 PKR bonus using code ${validReferralCode}` :
+                    `🎉 Account created! +50 PKR welcome bonus`;
                 
                 showToast(successMsg, 'success');
                 console.log('=== REGISTRATION COMPLETED SUCCESSFULLY ===');
-                console.log('👤 User UID:', user.uid);
-                console.log('🎫 User referral code:', userReferralCode);
-                console.log('🔗 User referredBy:', userData.referredBy);
-                console.log('👥 User referredByUid:', userData.referredByUid);
                 
                 // STEP 10: Redirect to profile
                 setTimeout(() => {
@@ -1985,7 +2003,7 @@
                 
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 
-                showToast('Login successful! Redirecting to your profile...', 'success');
+                showToast('Login successful! Redirecting...', 'success');
                 
                 setTimeout(() => {
                     redirectToProfile();
@@ -2046,5 +2064,4 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
-
 </html>

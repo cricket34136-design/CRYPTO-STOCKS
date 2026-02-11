@@ -518,62 +518,6 @@
             color: var(--success);
         }
 
-        /* Invitation Summary */
-        .invitation-summary {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-
-        .invitation-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .invitation-item {
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-        }
-
-        .invitation-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .invitation-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
-
-        .eligible-plans {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .plan-tag {
-            padding: 6px 12px;
-            background: rgba(108, 99, 255, 0.1);
-            border: 1px solid rgba(108, 99, 255, 0.3);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: var(--secondary);
-        }
-
-        .plan-tag.active {
-            background: rgba(0, 255, 136, 0.1);
-            border-color: rgba(0, 255, 136, 0.3);
-            color: var(--success);
-        }
-
         /* Progress Bar */
         .progress-container {
             margin: 20px 0;
@@ -723,10 +667,6 @@
             .investment-stats {
                 grid-template-columns: 1fr;
             }
-            
-            .invitation-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
         }
     </style>
     <!-- Chart.js for graphs -->
@@ -804,6 +744,9 @@
                 <div style="font-size: 0.85rem; color: var(--text-secondary);">
                     Complete all 5 tasks to earn daily profit!
                 </div>
+                <div style="font-size: 0.75rem; color: var(--warning); margin-top: 5px;">
+                    Note: Daily profit is only available for users with active investments
+                </div>
             </div>
         </div>
 
@@ -844,52 +787,39 @@
         </div>
         
         <div class="investment-summary">
-            <div class="plan-badge" id="currentPlanBadge">SILVER</div>
-            
-            <div class="investment-stats">
-                <div class="investment-stat">
-                    <span class="investment-label">Total Invested</span>
-                    <span class="investment-value" id="totalInvested">0 PKR</span>
-                </div>
-                <div class="investment-stat">
-                    <span class="investment-label">Daily Profit %</span>
-                    <span class="investment-value profit-value" id="dailyProfitPercent">15%</span>
-                </div>
-                <div class="investment-stat">
-                    <span class="investment-label">Total Earnings</span>
-                    <span class="investment-value profit-value" id="totalEarnings">0 PKR</span>
-                </div>
-                <div class="investment-stat">
-                    <span class="investment-label">Active Investments</span>
-                    <span class="investment-value" id="activeInvestments">0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Invitation Summary -->
-        <div class="section-header">
-            <h2 class="section-title">Invitation Summary</h2>
-        </div>
-        
-        <div class="invitation-summary">
-            <div class="invitation-stats">
-                <div class="invitation-item">
-                    <div class="invitation-value" id="invitesCompleted">0</div>
-                    <div class="invitation-label">Completed</div>
-                </div>
-                <div class="invitation-item">
-                    <div class="invitation-value" id="invitesPending">0</div>
-                    <div class="invitation-label">Pending</div>
-                </div>
-                <div class="invitation-item">
-                    <div class="invitation-value" id="totalReferrals">0</div>
-                    <div class="invitation-label">Total Referrals</div>
-                </div>
+            <div id="noInvestmentMessage" style="text-align: center; padding: 40px 20px; color: var(--text-secondary); display: none;">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom: 20px; opacity: 0.5;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M16.2 7.8l-2.6 2.6c-.3.3-.7.3-1 0L10 8.6c-.3-.3-.8-.1-.8.3v4.3c0 .4.3.8.8.8h4.3c.4 0 .6-.5.3-.8l-1.8-1.8 2.6-2.6c.3-.3.3-.7 0-1z"/>
+                </svg>
+                <h3>No Active Investment</h3>
+                <p>Start investing to unlock daily profit from tasks</p>
+                <button class="btn btn-primary" style="margin-top: 20px;" onclick="window.location.href='investment.html'">
+                    Start Investing
+                </button>
             </div>
             
-            <div class="section-subtitle">Eligible Invitation Plans</div>
-            <div class="eligible-plans" id="eligiblePlans">
-                <!-- Eligible plans will be added here -->
+            <div id="investmentDetails" style="display: none;">
+                <div class="plan-badge" id="currentPlanBadge">GOLD</div>
+                
+                <div class="investment-stats">
+                    <div class="investment-stat">
+                        <span class="investment-label">Total Invested</span>
+                        <span class="investment-value" id="totalInvested">800 PKR</span>
+                    </div>
+                    <div class="investment-stat">
+                        <span class="investment-label">Daily Profit Rate</span>
+                        <span class="investment-value profit-value" id="dailyProfitPercent">1.5%</span>
+                    </div>
+                    <div class="investment-stat">
+                        <span class="investment-label">Total Earnings</span>
+                        <span class="investment-value profit-value" id="totalEarnings">0 PKR</span>
+                    </div>
+                    <div class="investment-stat">
+                        <span class="investment-label">Active Investments</span>
+                        <span class="investment-value" id="activeInvestments">1</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -949,47 +879,130 @@
         let walletListener = null;
         let userData = null;
         let profitAddedToday = false;
+        let hasActiveInvestment = false;
+        let userInvestments = [];
 
-        // Daily Tasks Configuration
+        // Daily Tasks Configuration for 3-day cycle
         const DAILY_TASKS = [
             // Day 1 Tasks (1-5)
-            { id: 1, name: "Watch Tutorial", description: "Watch 5-minute investment tutorial", requiredPlan: "SILVER", reward: 10 },
-            { id: 2, name: "Daily Login", description: "Login to your account", requiredPlan: "SILVER", reward: 5 },
-            { id: 3, name: "Check Market", description: "Check current market prices", requiredPlan: "SILVER", reward: 8 },
-            { id: 4, name: "Read News", description: "Read latest financial news", requiredPlan: "SILVER", reward: 7 },
-            { id: 5, name: "Plan Review", description: "Review your investment plans", requiredPlan: "SILVER", reward: 10 },
+            { 
+                id: 1, 
+                name: "Subscribe YouTube", 
+                description: "Subscribe to our YouTube channel", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 2, 
+                name: "Follow WhatsApp", 
+                description: "Follow our WhatsApp channel", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 3, 
+                name: "Follow Instagram", 
+                description: "Follow us on Instagram", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 4, 
+                name: "Read Market News", 
+                description: "Read latest financial news", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 5, 
+                name: "Watch Tutorial", 
+                description: "Watch 5-minute investment tutorial", 
+                requiredInvestment: false, 
+                reward: 0
+            },
             
             // Day 2 Tasks (6-10)
-            { id: 6, name: "Analyze Chart", description: "Analyze market charts for 10 minutes", requiredPlan: "SILVER", reward: 12 },
-            { id: 7, name: "Update Profile", description: "Complete your profile information", requiredPlan: "SILVER", reward: 8 },
-            { id: 8, name: "Set Goals", description: "Set weekly investment goals", requiredPlan: "SILVER", reward: 10 },
-            { id: 9, name: "Risk Assessment", description: "Complete risk assessment quiz", requiredPlan: "SILVER", reward: 15 },
-            { id: 10, name: "Strategy Plan", description: "Create investment strategy", requiredPlan: "SILVER", reward: 12 },
+            { 
+                id: 6, 
+                name: "Update Profile", 
+                description: "Complete your profile information", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 7, 
+                name: "Set Goals", 
+                description: "Set weekly investment goals", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 8, 
+                name: "Risk Assessment", 
+                description: "Complete risk assessment quiz", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 9, 
+                name: "Strategy Plan", 
+                description: "Create investment strategy", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 10, 
+                name: "Portfolio Review", 
+                description: "Review your investment portfolio", 
+                requiredInvestment: false, 
+                reward: 0
+            },
             
             // Day 3 Tasks (11-15)
-            { id: 11, name: "Portfolio Review", description: "Review your investment portfolio", requiredPlan: "GOLD", reward: 20 },
-            { id: 12, name: "Expert Analysis", description: "Watch expert market analysis", requiredPlan: "GOLD", reward: 15 },
-            { id: 13, name: "Trend Research", description: "Research market trends", requiredPlan: "GOLD", reward: 12 },
-            { id: 14, name: "Risk Management", description: "Study risk management techniques", requiredPlan: "GOLD", reward: 18 },
-            { id: 15, name: "Invite Friend", description: "Invite at least one new person", requiredPlan: "GOLD", reward: 25 }
+            { 
+                id: 11, 
+                name: "Expert Analysis", 
+                description: "Watch expert market analysis", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 12, 
+                name: "Trend Research", 
+                description: "Research market trends", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 13, 
+                name: "Risk Management", 
+                description: "Study risk management techniques", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 14, 
+                name: "Market Charts", 
+                description: "Analyze market charts", 
+                requiredInvestment: false, 
+                reward: 0
+            },
+            { 
+                id: 15, 
+                name: "Make an Investment", 
+                description: "Deposit in any investment plan", 
+                requiredInvestment: true, 
+                reward: 0
+            }
         ];
-
-        // Plan Daily Profit Rates
-        const PLAN_PROFITS = {
-            'SILVER': 15,
-            'GOLD': 20,
-            'BTC': 25,
-            'ETH': 30
-        };
-
-        // Plan Hierarchy for Invitations
-        const PLAN_HIERARCHY = ['SILVER', 'GOLD', 'BTC', 'ETH'];
 
         // DOM Elements
         const taskList = document.getElementById('taskList');
         const walletAmount = document.getElementById('walletAmount');
         const toastContainer = document.querySelector('.toast-container');
         const refreshBalanceBtn = document.getElementById('refreshBalanceBtn');
+        const noInvestmentMessage = document.getElementById('noInvestmentMessage');
+        const investmentDetails = document.getElementById('investmentDetails');
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1004,6 +1017,10 @@
                 await loadUserData();
                 console.log('User data loaded');
                 
+                // Check if user has active investment
+                await checkActiveInvestment();
+                console.log('Active investment check completed');
+                
                 // Initialize components
                 initDashboard();
                 console.log('Dashboard initialized');
@@ -1016,8 +1033,8 @@
                 startTasksResetTimer();
                 console.log('Reset timer started');
                 
-                // Check if daily profit should be added
-                checkAndAddDailyProfit();
+                // Check if user should get profit
+                await checkAndAddDailyProfit();
                 
                 showToast('Dashboard loaded successfully!', 'success');
                 
@@ -1055,7 +1072,10 @@
                     const today = new Date().toDateString();
                     profitAddedToday = userData.lastProfitDate === today;
                     
-                    // Update UI with user data - FIXED: Call updateAllDashboardStats instead of updateDashboardUI
+                    // Update wallet balance
+                    userWalletBalance = userData.accountBalance || 0;
+                    
+                    // Update UI with user data
                     updateAllDashboardStats();
                 } else {
                     showToast('User profile not found. Creating new profile...', 'warning');
@@ -1064,6 +1084,163 @@
             } catch (error) {
                 console.error('Error loading user data:', error);
                 throw error;
+            }
+        }
+
+        // Check if user has active investment
+        async function checkActiveInvestment() {
+            try {
+                console.log('Checking active investments for user:', currentUser.uid);
+                
+                // First, check all investments without status filter to debug
+                const allInvestments = await db.collection('investments')
+                    .where('userId', '==', currentUser.uid)
+                    .get();
+                
+                console.log('Total investments found:', allInvestments.size);
+                allInvestments.forEach(doc => {
+                    console.log('Investment:', doc.id, doc.data());
+                });
+                
+                // Now query for active investments with broader status filter
+                const investmentsSnapshot = await db.collection('investments')
+                    .where('userId', '==', currentUser.uid)
+                    .where('status', 'in', ['active', 'running', 'progress'])
+                    .get();
+                
+                console.log('Active investments found:', investmentsSnapshot.size);
+                
+                hasActiveInvestment = investmentsSnapshot.size > 0;
+                userInvestments = [];
+                
+                if (hasActiveInvestment) {
+                    investmentsSnapshot.forEach(doc => {
+                        const investmentData = doc.data();
+                        console.log('Active investment data:', investmentData);
+                        userInvestments.push(investmentData);
+                    });
+                    
+                    // Update UI based on investment status
+                    noInvestmentMessage.style.display = 'none';
+                    investmentDetails.style.display = 'block';
+                    
+                    // Update investment stats
+                    updateInvestmentStats();
+                } else {
+                    noInvestmentMessage.style.display = 'block';
+                    investmentDetails.style.display = 'none';
+                }
+                
+                return hasActiveInvestment;
+            } catch (error) {
+                console.error('Error checking active investment:', error);
+                return false;
+            }
+        }
+
+        // Update Investment Stats
+        function updateInvestmentStats() {
+            if (!userData || !hasActiveInvestment) return;
+            
+            console.log('Updating investment stats. User investments:', userInvestments);
+            
+            // Calculate total invested from active investments
+            let totalInvested = 0;
+            let highestPlanName = 'GOLD';
+            let highestPlanRate = 1.5; // Default for GOLD plan
+            
+            userInvestments.forEach(investment => {
+                console.log('Processing investment:', investment);
+                totalInvested += investment.amount || 0;
+                
+                // Get plan details
+                const planName = investment.planName || investment.plan || investment.planType || '';
+                console.log('Plan name found:', planName);
+                
+                // Update highest plan based on amount or plan level
+                if (planName) {
+                    const planRate = getDailyPercentageFromPlan(planName);
+                    if (planRate > highestPlanRate) {
+                        highestPlanRate = planRate;
+                        highestPlanName = planName.toUpperCase();
+                    }
+                }
+            });
+            
+            // Use userData.totalInvested if available, otherwise calculate from investments
+            const displayTotalInvested = userData.totalInvested || totalInvested;
+            
+            console.log('Final stats - Total Invested:', displayTotalInvested, 'Plan:', highestPlanName, 'Rate:', highestPlanRate);
+            
+            // Update UI
+            document.getElementById('currentPlanBadge').textContent = highestPlanName || 'GOLD';
+            document.getElementById('totalInvested').textContent = `${displayTotalInvested.toFixed(2)} PKR`;
+            document.getElementById('dailyProfitPercent').textContent = `${highestPlanRate.toFixed(1)}%`;
+            document.getElementById('totalEarnings').textContent = `${(userData.totalEarnings || 0).toFixed(2)} PKR`;
+            document.getElementById('activeInvestments').textContent = userInvestments.length;
+        }
+
+        // Get daily percentage from plan name
+        function getDailyPercentageFromPlan(planName) {
+            const plan = (planName || '').toUpperCase();
+            switch(plan) {
+                case 'BASIC': return 0.5;
+                case 'SILVER': return 1.0;
+                case 'GOLD': return 1.5;
+                case 'PLATINUM': return 2.0;
+                case 'DIAMOND': return 2.5;
+                default: return 1.5; // Default to GOLD rate
+            }
+        }
+
+        // Calculate Daily Profit from Investment
+        function calculateDailyProfitFromInvestment(investment) {
+            if (!investment || !investment.amount) return 0;
+            
+            const amount = investment.amount || 0;
+            let dailyPercentage = investment.dailyPercentage || 0;
+            
+            // If dailyPercentage not set, calculate based on plan name
+            if (!dailyPercentage || dailyPercentage === 0) {
+                const planName = investment.planName || investment.plan || investment.planType || '';
+                dailyPercentage = getDailyPercentageFromPlan(planName);
+            }
+            
+            console.log('Calculating profit:', amount, dailyPercentage, 'Result:', (amount * dailyPercentage) / 100);
+            return (amount * dailyPercentage) / 100;
+        }
+
+        // Check and add daily profit if eligible
+        async function checkAndAddDailyProfit() {
+            if (!userData || !currentUser || !hasActiveInvestment) {
+                console.log('Not eligible for daily profit:', { hasActiveInvestment, userData: !!userData });
+                return;
+            }
+            
+            const today = new Date().toDateString();
+            const lastProfitDate = userData.lastProfitDate;
+            
+            console.log('Checking daily profit eligibility:', {
+                today,
+                lastProfitDate,
+                profitAddedToday,
+                completedTasks: userData.completedTasksToday || 0
+            });
+            
+            // Check if profit was already added today
+            if (lastProfitDate === today) {
+                profitAddedToday = true;
+                console.log('Profit already added today');
+                return;
+            }
+            
+            // Check if user has completed all tasks
+            const completedTasks = userData.completedTasksToday || 0;
+            if (completedTasks >= 5) {
+                console.log('User has completed all tasks, adding daily profit');
+                await addDailyProfit();
+            } else {
+                console.log('User has not completed all tasks:', completedTasks, '/ 5');
             }
         }
 
@@ -1083,13 +1260,14 @@
                     referralEarnings: 0,
                     totalReferrals: 0,
                     activeReferrals: 0,
-                    balance: 0,
                     accountBalance: 0,
+                    balance: 0,
                     pendingWithdraw: 0,
                     totalInvested: 0,
+                    totalEarnings: 0,
                     totalProfit: 0,
                     activeInvestments: 0,
-                    currentPlan: "SILVER",
+                    currentPlan: "NONE",
                     dailyTasks: {},
                     completedTasksToday: 0,
                     lastTaskReset: new Date().toISOString(),
@@ -1129,10 +1307,13 @@
             setupInvestmentsListener();
             
             // Start tasks completion check interval
-            tasksUpdateInterval = setInterval(checkTasksCompletion, 15000); // Check every 15 seconds
+            tasksUpdateInterval = setInterval(checkTasksCompletion, 15000);
             
             // Start periodic data refresh
-            setInterval(refreshDashboardData, 30000); // Refresh every 30 seconds
+            setInterval(refreshDashboardData, 30000);
+            
+            // Check for daily profit every minute
+            setInterval(checkAndAddDailyProfit, 60000);
         }
 
         // Wallet Listener
@@ -1143,14 +1324,17 @@
                 .onSnapshot((doc) => {
                     if (doc.exists) {
                         const updatedData = doc.data();
-                        userWalletBalance = updatedData.balance || updatedData.accountBalance || 0;
+                        userWalletBalance = updatedData.accountBalance || 0;
                         userData = updatedData;
                         
                         updateWalletUI();
-                        updateAllDashboardStats(); // FIXED: Changed from updateDashboardUI()
+                        updateAllDashboardStats();
                         
                         // Update tasks display
                         loadDailyTasks();
+                        
+                        // Check if user should get profit
+                        checkAndAddDailyProfit();
                     }
                 }, (error) => {
                     console.error('Wallet listener error:', error);
@@ -1163,15 +1347,35 @@
             
             db.collection('investments')
                 .where('userId', '==', currentUser.uid)
-                .where('status', '==', 'running')
+                .where('status', 'in', ['active', 'running', 'progress'])
                 .onSnapshot((snapshot) => {
-                    const activeCount = snapshot.size;
-                    document.getElementById('activeInvestments').textContent = activeCount;
+                    userInvestments = [];
+                    snapshot.forEach(doc => {
+                        userInvestments.push(doc.data());
+                    });
+                    
+                    hasActiveInvestment = userInvestments.length > 0;
+                    
+                    if (hasActiveInvestment) {
+                        noInvestmentMessage.style.display = 'none';
+                        investmentDetails.style.display = 'block';
+                        updateInvestmentStats();
+                    } else {
+                        noInvestmentMessage.style.display = 'block';
+                        investmentDetails.style.display = 'none';
+                    }
                     
                     // Update user data
                     if (userData) {
-                        userData.activeInvestments = activeCount;
+                        userData.activeInvestments = userInvestments.length;
                     }
+                    
+                    // Reload tasks to update the "Make an Investment" task
+                    loadDailyTasks();
+                    
+                    // Check if user should get profit
+                    checkAndAddDailyProfit();
+                    
                 }, (error) => {
                     console.error('Investments listener error:', error);
                 });
@@ -1181,7 +1385,9 @@
         async function refreshDashboardData() {
             try {
                 await loadUserData();
+                await checkActiveInvestment();
                 updateEarningsChart();
+                await checkAndAddDailyProfit();
             } catch (error) {
                 console.error('Error refreshing dashboard data:', error);
             }
@@ -1191,7 +1397,6 @@
         function loadDailyTasks() {
             if (!userData) return;
             
-            const currentPlan = userData.currentPlan || 'SILVER';
             const now = new Date();
             const lastReset = userData.lastTaskReset ? new Date(userData.lastTaskReset) : now;
             
@@ -1212,7 +1417,7 @@
             const todaysTasks = DAILY_TASKS.slice(startIndex, startIndex + 5);
             
             // Display tasks
-            displayTasks(todaysTasks, currentPlan);
+            displayTasks(todaysTasks);
             
             // Update progress
             updateTasksProgress();
@@ -1221,25 +1426,28 @@
         // Calculate Day in Cycle
         function calculateDayInCycle(lastResetDate) {
             const now = new Date();
-            const daysSinceReset = Math.floor((now - lastResetDate) / (1000 * 60 * 60 * 24));
-            return (daysSinceReset % 3) + 1; // Returns 1, 2, or 3
+            const startDate = new Date(lastResetDate);
+            
+            // Calculate days difference
+            const timeDiff = now.getTime() - startDate.getTime();
+            const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+            
+            // Return day in 3-day cycle (1, 2, or 3)
+            return (daysDiff % 3) + 1;
         }
 
         // Display Tasks
-        function displayTasks(tasks, currentPlan) {
+        function displayTasks(tasks) {
             taskList.innerHTML = '';
             
-            const currentPlanIndex = PLAN_HIERARCHY.indexOf(currentPlan);
-            
             tasks.forEach(task => {
-                const requiredPlanIndex = PLAN_HIERARCHY.indexOf(task.requiredPlan);
-                const isEligible = requiredPlanIndex <= currentPlanIndex;
                 const isCompleted = userData.dailyTasks && userData.dailyTasks[task.id] === true;
+                const canCompleteTask = hasActiveInvestment || !task.requiredInvestment;
                 
                 const taskElement = document.createElement('div');
-                taskElement.className = `task-item ${isCompleted ? 'completed' : ''} ${!isEligible ? 'disabled' : ''}`;
+                taskElement.className = `task-item ${isCompleted ? 'completed' : ''} ${!canCompleteTask ? 'disabled' : ''}`;
                 taskElement.setAttribute('data-task-id', task.id);
-                taskElement.setAttribute('data-eligible', isEligible);
+                taskElement.setAttribute('data-eligible', canCompleteTask);
                 taskElement.innerHTML = `
                     <div class="task-checkbox">
                         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
@@ -1250,36 +1458,42 @@
                         <div class="task-name">${task.name}</div>
                         <div class="task-description">${task.description}</div>
                     </div>
-                    <div class="task-badge ${isCompleted ? 'completed' : !isEligible ? 'locked' : 'pending'}">
-                        ${isCompleted ? 'Completed' : !isEligible ? 'Locked' : 'Pending'}
+                    <div class="task-badge ${isCompleted ? 'completed' : !canCompleteTask ? 'locked' : 'pending'}">
+                        ${isCompleted ? 'Completed' : !canCompleteTask ? 'Requires Investment' : 'Pending'}
                     </div>
                 `;
                 
                 // Add click event to task item
-                taskElement.addEventListener('click', () => {
-                    toggleTask(task.id, isEligible);
-                });
+                if (canCompleteTask) {
+                    taskElement.addEventListener('click', () => {
+                        toggleTask(task.id);
+                    });
+                } else {
+                    taskElement.addEventListener('click', () => {
+                        showToast('This task requires an active investment. Go to Investment page to start.', 'warning');
+                    });
+                }
                 
                 taskList.appendChild(taskElement);
             });
         }
 
         // Toggle Task Completion
-        async function toggleTask(taskId, isEligible) {
-            if (!isEligible) {
-                showToast('This task requires a higher plan level', 'warning');
-                return;
-            }
-            
+        async function toggleTask(taskId) {
             if (!userData || !currentUser) return;
             
             try {
+                const task = DAILY_TASKS.find(t => t.id === taskId);
+                if (!task) return;
+                
+                // Check if task requires investment and user doesn't have one
+                if (task.requiredInvestment && !hasActiveInvestment) {
+                    showToast('This task requires an active investment', 'warning');
+                    return;
+                }
+                
                 const isCurrentlyCompleted = userData.dailyTasks && userData.dailyTasks[taskId] === true;
                 const newCompletionStatus = !isCurrentlyCompleted;
-                
-                // Calculate task reward
-                const task = DAILY_TASKS.find(t => t.id === taskId);
-                const taskReward = task ? task.reward : 0;
                 
                 // Update in Firebase
                 const updateData = {
@@ -1289,16 +1503,8 @@
                 
                 if (newCompletionStatus) {
                     updateData.completedTasksToday = firebase.firestore.FieldValue.increment(1);
-                    if (taskReward > 0) {
-                        updateData.balance = firebase.firestore.FieldValue.increment(taskReward);
-                        updateData.totalProfit = firebase.firestore.FieldValue.increment(taskReward);
-                    }
                 } else {
                     updateData.completedTasksToday = firebase.firestore.FieldValue.increment(-1);
-                    if (taskReward > 0) {
-                        updateData.balance = firebase.firestore.FieldValue.increment(-taskReward);
-                        updateData.totalProfit = firebase.firestore.FieldValue.increment(-taskReward);
-                    }
                 }
                 
                 await db.collection('users').doc(currentUser.uid).update(updateData);
@@ -1309,15 +1515,6 @@
                 userData.completedTasksToday = newCompletionStatus ? 
                     (userData.completedTasksToday || 0) + 1 : 
                     Math.max(0, (userData.completedTasksToday || 0) - 1);
-                
-                if (taskReward > 0) {
-                    userData.balance = newCompletionStatus ? 
-                        (userData.balance || 0) + taskReward : 
-                        Math.max(0, (userData.balance || 0) - taskReward);
-                    userData.totalProfit = newCompletionStatus ? 
-                        (userData.totalProfit || 0) + taskReward : 
-                        Math.max(0, (userData.totalProfit || 0) - taskReward);
-                }
                 
                 // Reload tasks to update UI
                 loadDailyTasks();
@@ -1338,7 +1535,7 @@
             if (!userData) return;
             
             const completedCount = userData.completedTasksToday || 0;
-            const totalTasks = 5; // Always 5 tasks per day
+            const totalTasks = 5;
             
             // Update progress
             const progressPercent = Math.round((completedCount / totalTasks) * 100);
@@ -1346,55 +1543,39 @@
             document.getElementById('progressFill').style.width = `${progressPercent}%`;
             document.getElementById('completedTasks').textContent = `${completedCount}/${totalTasks}`;
             
-            // If all tasks are completed, check and add daily profit
-            if (completedCount === totalTasks && !profitAddedToday) {
-                await addDailyProfit();
-            }
-        }
-
-        // Check and Add Daily Profit
-        async function checkAndAddDailyProfit() {
-            if (!userData) return;
-            
-            const today = new Date().toDateString();
-            const completedCount = userData.completedTasksToday || 0;
-            
-            // Check if all tasks are completed and profit not added today
-            if (completedCount === 5 && userData.lastProfitDate !== today) {
-                await addDailyProfit();
+            // If all tasks are completed AND user has active investment, check for daily profit
+            if (completedCount === totalTasks && hasActiveInvestment) {
+                await checkAndAddDailyProfit();
             }
         }
 
         // Add Daily Profit
         async function addDailyProfit() {
-            if (!userData || !currentUser) return;
+            if (!userData || !currentUser || !hasActiveInvestment) return;
             
             // Check if profit was already added today
             const today = new Date().toDateString();
             if (userData.lastProfitDate === today) {
                 profitAddedToday = true;
-                return; // Profit already added today
+                return;
             }
             
             try {
-                const currentPlan = userData.currentPlan || 'SILVER';
-                const profitRate = PLAN_PROFITS[currentPlan] || 15;
-                const totalInvested = userData.totalInvested || 0;
+                // Calculate total daily profit from all active investments
+                let totalDailyProfit = 0;
+                userInvestments.forEach(investment => {
+                    const dailyProfit = calculateDailyProfitFromInvestment(investment);
+                    totalDailyProfit += dailyProfit;
+                });
                 
-                // Calculate daily profit based on investment
-                let dailyProfit = 0;
-                if (totalInvested > 0) {
-                    dailyProfit = (totalInvested * profitRate) / 100;
-                } else {
-                    // Minimum profit if no investment
-                    dailyProfit = 50; // Minimum 50 PKR for completing all tasks
-                }
+                console.log('Adding daily profit:', totalDailyProfit, 'from', userInvestments.length, 'investments');
                 
-                if (dailyProfit > 0) {
-                    // Update user balance
+                if (totalDailyProfit > 0) {
+                    // Update user accountBalance and totalEarnings
                     await db.collection('users').doc(currentUser.uid).update({
-                        balance: firebase.firestore.FieldValue.increment(dailyProfit),
-                        totalProfit: firebase.firestore.FieldValue.increment(dailyProfit),
+                        accountBalance: firebase.firestore.FieldValue.increment(totalDailyProfit),
+                        totalEarnings: firebase.firestore.FieldValue.increment(totalDailyProfit),
+                        totalProfit: firebase.firestore.FieldValue.increment(totalDailyProfit),
                         lastProfitDate: today,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -1402,27 +1583,33 @@
                     // Record earnings transaction
                     await db.collection('earnings').add({
                         userId: currentUser.uid,
-                        amount: dailyProfit,
+                        amount: totalDailyProfit,
                         type: 'daily_profit',
-                        plan: currentPlan,
-                        investmentAmount: totalInvested,
-                        profitRate: profitRate,
+                        source: 'task_completion',
+                        investmentCount: userInvestments.length,
                         date: new Date().toISOString(),
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     
                     // Update local state
-                    userData.balance = (userData.balance || 0) + dailyProfit;
-                    userData.totalProfit = (userData.totalProfit || 0) + dailyProfit;
+                    userData.accountBalance = (userData.accountBalance || 0) + totalDailyProfit;
+                    userData.totalEarnings = (userData.totalEarnings || 0) + totalDailyProfit;
+                    userData.totalProfit = (userData.totalProfit || 0) + totalDailyProfit;
                     userData.lastProfitDate = today;
                     profitAddedToday = true;
+                    
+                    // Update wallet balance display
+                    userWalletBalance = userData.accountBalance;
                     
                     // Update UI
                     updateWalletUI();
                     updateEarningsChart();
                     updateAllDashboardStats();
+                    updateInvestmentStats();
                     
-                    showToast(`🎉 Daily profit of ${dailyProfit.toFixed(2)} PKR added!`, 'success');
+                    showToast(`🎉 Daily profit of ${totalDailyProfit.toFixed(2)} PKR added to your account!`, 'success');
+                } else {
+                    console.log('No profit to add. Total daily profit is 0');
                 }
                 
             } catch (error) {
@@ -1462,7 +1649,7 @@
         // Start Tasks Reset Timer
         function startTasksResetTimer() {
             updateResetTimer();
-            setInterval(updateResetTimer, 1000); // Update every second
+            setInterval(updateResetTimer, 1000);
         }
 
         // Update Reset Timer Display
@@ -1586,18 +1773,17 @@
         // Generate Earnings Data
         function generateEarningsData(days) {
             const data = [];
-            const baseEarning = userData ? (userData.totalProfit || 0) / 30 : 0;
             
             for (let i = 0; i < days; i++) {
-                const randomFactor = 0.8 + Math.random() * 0.4; // Random between 0.8 and 1.2
-                const dailyEarning = baseEarning > 0 ? baseEarning * randomFactor : 0;
-                data.push(parseFloat(dailyEarning.toFixed(2)));
-            }
-            
-            // Ensure today's earning is accurate
-            if (data.length > 0 && userData) {
-                const todayProfit = calculateTodayProfit();
-                data[data.length - 1] = todayProfit;
+                // For past days, use random data
+                if (i < days - 1) {
+                    const randomEarning = Math.random() * 20;
+                    data.push(parseFloat(randomEarning.toFixed(2)));
+                } else {
+                    // For today, calculate actual profit
+                    const todayProfit = calculateTodayProfit();
+                    data.push(todayProfit);
+                }
             }
             
             return data;
@@ -1605,17 +1791,15 @@
 
         // Calculate Today's Profit
         function calculateTodayProfit() {
-            if (!userData) return 0;
+            if (!userData || !hasActiveInvestment) return 0;
             
-            const currentPlan = userData.currentPlan || 'SILVER';
-            const profitRate = PLAN_PROFITS[currentPlan] || 15;
-            const totalInvested = userData.totalInvested || 0;
+            // Calculate total daily profit from active investments
+            let totalDailyProfit = 0;
+            userInvestments.forEach(investment => {
+                totalDailyProfit += calculateDailyProfitFromInvestment(investment);
+            });
             
-            if (totalInvested > 0) {
-                return (totalInvested * profitRate) / 100;
-            }
-            
-            return 50; // Minimum profit for completing tasks
+            return totalDailyProfit;
         }
 
         // Change Graph Range
@@ -1678,40 +1862,20 @@
         function updateAllDashboardStats() {
             if (!userData) return;
             
-            // Update investment summary
-            const currentPlan = userData.currentPlan || 'SILVER';
-            document.getElementById('currentPlanBadge').textContent = currentPlan;
-            document.getElementById('dailyProfitPercent').textContent = `${PLAN_PROFITS[currentPlan] || 15}%`;
-            document.getElementById('totalInvested').textContent = `${(userData.totalInvested || 0).toFixed(2)} PKR`;
-            document.getElementById('totalEarnings').textContent = `${(userData.totalProfit || 0).toFixed(2)} PKR`;
+            // Update wallet
+            updateWalletUI();
+            
+            // Update investment summary if user has investments
+            if (hasActiveInvestment) {
+                updateInvestmentStats();
+            }
             
             // Calculate daily profit
             const dailyProfit = calculateTodayProfit();
             document.getElementById('dailyProfit').textContent = `${dailyProfit.toFixed(2)} PKR`;
             
-            // Update invitation summary
-            document.getElementById('invitesCompleted').textContent = userData.activeReferrals || 0;
-            document.getElementById('invitesPending').textContent = 0;
-            document.getElementById('totalReferrals').textContent = userData.totalReferrals || 0;
-            
-            // Update eligible plans
-            updateEligiblePlans(currentPlan);
-        }
-
-        // Update Eligible Plans
-        function updateEligiblePlans(currentPlan) {
-            const eligiblePlansContainer = document.getElementById('eligiblePlans');
-            eligiblePlansContainer.innerHTML = '';
-            
-            const currentPlanIndex = PLAN_HIERARCHY.indexOf(currentPlan);
-            
-            PLAN_HIERARCHY.forEach((plan, index) => {
-                const isEligible = index >= currentPlanIndex;
-                const planTag = document.createElement('span');
-                planTag.className = `plan-tag ${isEligible ? 'active' : ''}`;
-                planTag.textContent = plan;
-                eligiblePlansContainer.appendChild(planTag);
-            });
+            // Update tasks progress
+            updateTasksProgress();
         }
 
         // Update Wallet UI
@@ -1743,12 +1907,14 @@
                 const userDoc = await db.collection('users').doc(currentUser.uid).get();
                 if (userDoc.exists) {
                     const data = userDoc.data();
-                    userWalletBalance = data.balance || data.accountBalance || 0;
+                    userWalletBalance = data.accountBalance || 0;
                     userData = data;
                     
                     updateWalletUI();
                     updateAllDashboardStats();
+                    await checkActiveInvestment();
                     updateTasksProgress();
+                    await checkAndAddDailyProfit();
                     showToast('Balance refreshed successfully!', 'success');
                 }
             } catch (error) {

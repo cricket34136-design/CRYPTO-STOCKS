@@ -28,6 +28,7 @@
             --danger: #ff4757;
             --success: #00ff88;
             --warning: #ffaa00;
+            --whatsapp: #25D366;
         }
 
         * {
@@ -43,6 +44,7 @@
             min-height: 100vh;
             padding-bottom: 80px;
             padding-top: 60px;
+            position: relative;
         }
 
         /* Toast System - Match Investment Page */
@@ -90,6 +92,57 @@
             border-top: 2px solid rgba(255, 170, 0, 0.3);
             border-right: 2px solid rgba(255, 170, 0, 0.3);
             border-bottom: 2px solid rgba(255, 170, 0, 0.3);
+        }
+
+        /* WhatsApp Floating Button - MOBILE FRIENDLY */
+        .whatsapp-float {
+            position: fixed;
+            bottom: 90px;
+            right: 15px;
+            width: 60px;
+            height: 60px;
+            background: var(--whatsapp);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
+            z-index: 999;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            animation: pulse-whatsapp 2s infinite;
+        }
+
+        .whatsapp-float:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes pulse-whatsapp {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+            }
+        }
+
+        /* Adjust for mobile to avoid overlap with bottom nav */
+        @media (max-width: 640px) {
+            .whatsapp-float {
+                bottom: 90px;
+                right: 12px;
+                width: 55px;
+                height: 55px;
+                font-size: 28px;
+            }
         }
 
         /* Navigation - Match Investment Page */
@@ -980,6 +1033,11 @@
             .container {
                 max-width: 1200px;
             }
+            
+            .whatsapp-float {
+                bottom: 30px;
+                right: 30px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1000,6 +1058,14 @@
                 min-width: 60px;
                 padding: 8px 12px;
             }
+            
+            .whatsapp-float {
+                bottom: 85px;
+                right: 10px;
+                width: 50px;
+                height: 50px;
+                font-size: 26px;
+            }
         }
 
         /* Remove old styles that don't match Investment page */
@@ -1012,6 +1078,11 @@
 <body>
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- WhatsApp Floating Button - Small icon in corner, opens WhatsApp -->
+    <a href="https://wa.me/923449143446" class="whatsapp-float" target="_blank" title="Chat with us on WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 
     <!-- Top Navigation -->
     <nav class="top-nav">
@@ -1404,8 +1475,8 @@
     const paymentDetails = {
         easypaisa: {
             name: "EasyPaisa",
-            number: "0312-3456789",
-            accountName: "INVITEGAIN OFFICIAL",
+            number: "0310-0912373",
+            accountName: "sohaib ali",
             instructions: [
                 "Send money to the number above",
                 "Save transaction receipt/screenshot",
@@ -1415,8 +1486,8 @@
         },
         jazzcash: {
             name: "JazzCash",
-            number: "0300-1234567",
-            accountName: "INVITEGAIN LLC",
+            number: "0310-0912373",
+            accountName: "SOhAIB ALI",
             instructions: [
                 "Send money to the number above",
                 "Save transaction receipt/screenshot",
@@ -1426,10 +1497,10 @@
         },
         bank: {
             name: "Bank Transfer",
-            number: "1234-5678901-2",
-            accountName: "INVITEGAIN PRIVATE LIMITED",
-            bankName: "Habib Bank Limited",
-            iban: "PK00HABB0000123456789012",
+            number: "0344-9143446",
+            accountName: "SUMERA",
+            bankName: "UPAISA ACCOUNT",
+            iban: "PK91UMBL0000034491434465",
             instructions: [
                 "Transfer to the account above",
                 "Use your User ID as reference",
@@ -1439,7 +1510,7 @@
         },
         usdt: {
             name: "USDT (TRC20)",
-            address: "TYg7VKj8r9P4z1q2w3e4r5t6y7u8i9o0p",
+            address: "not avilable",
             network: "TRC20 (Tron)",
             instructions: [
                 "Send USDT to the address above",
@@ -2544,5 +2615,4 @@
     }
 </script>
 </body>
-
 </html>
